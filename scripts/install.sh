@@ -3,7 +3,7 @@
 #
 # NetGen Pro - DPDK Edition Installation Script
 # Installs DPDK, dependencies, and sets up the environment
-# FIXED: Proper hugepage detection + Python venv support
+# FIXED: Proper hugepage detection + Python venv support + sudo handling
 #
 
 set -e
@@ -12,17 +12,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 DPDK_VERSION="23.11"
 VENV_DIR="$SCRIPT_DIR/venv"
 
+# Detect the actual user (even if run with sudo)
+if [ -n "$SUDO_USER" ]; then
+    ACTUAL_USER="$SUDO_USER"
+    ACTUAL_UID=$(id -u "$SUDO_USER")
+    ACTUAL_GID=$(id -g "$SUDO_USER")
+else
+    ACTUAL_USER="$USER"
+    ACTUAL_UID=$(id -u)
+    ACTUAL_GID=$(id -g)
+fi
+
 echo "╔════════════════════════════════════════════════════════════════════╗"
 echo "║          NetGen Pro - DPDK Edition Installer                       ║"
 echo "╚════════════════════════════════════════════════════════════════════╝"
 echo ""
-
-# Check if running as root
-if [ "$EUID" -eq 0 ]; then
-    echo "⚠️  Please run this script as a regular user (not root)"
-    echo "   The script will use sudo when necessary"
-    exit 1
-fi
 
 # Detect OS
 if [ -f /etc/os-release ]; then
@@ -35,7 +39,28 @@ else
 fi
 
 echo "Detected OS: $OS $VERSION"
+echo "Install directory: $SCRIPT_DIR"
+echo "Installing as user: $ACTUAL_USER"
 echo ""
+
+# Function to run command as actual user
+run_as_user() {
+    if [ "$EUID" -eq 0 ]; then
+        sudo -u "$ACTUAL_USER" "$@"
+    else
+        "$@"
+    fi
+}
+
+# Function to ensure sudo is available
+ensure_sudo() {
+    if [ "$EUID" -ne 0 ]; then
+        if ! command -v sudo &> /dev/null; then
+            echo "❌ sudo not found. Please install sudo or run as root."
+            exit 1
+        fi
+    fi
+}
 
 # Function to detect hugepage directory
 detect_hugepage_dir() {
@@ -72,42 +97,82 @@ install_dependencies() {
     echo " Installing system dependencies..."
     echo "═══════════════════════════════════════════════════════════════════"
     
+    ensure_sudo
+    
     case $OS in
         ubuntu|debian)
-            sudo apt-get update
-            sudo apt-get install -y \
-                build-essential \
-                meson \
-                ninja-build \
-                python3-pip \
-                python3-venv \
-                python3-pyelftools \
-                pkg-config \
-                libnuma-dev \
-                libpcap-dev \
-                linux-headers-$(uname -r) \
-                python3-dev \
-                git \
-                wget \
-                pciutils \
-                net-tools
+            if [ "$EUID" -ne 0 ]; then
+                sudo apt-get update
+                sudo apt-get install -y \
+                    build-essential \
+                    meson \
+                    ninja-build \
+                    python3-pip \
+                    python3-venv \
+                    python3-pyelftools \
+                    pkg-config \
+                    libnuma-dev \
+                    libpcap-dev \
+                    linux-headers-$(uname -r) \
+                    python3-dev \
+                    git \
+                    wget \
+                    pciutils \
+                    net-tools
+            else
+                apt-get update
+                apt-get install -y \
+                    build-essential \
+                    meson \
+                    ninja-build \
+                    python3-pip \
+                    python3-venv \
+                    python3-pyelftools \
+                    pkg-config \
+                    libnuma-dev \
+                    libpcap-dev \
+                    linux-headers-$(uname -r) \
+                    python3-dev \
+                    git \
+                    wget \
+                    pciutils \
+                    net-tools
+            fi
             ;;
         centos|rhel|fedora)
-            sudo yum groupinstall -y "Development Tools"
-            sudo yum install -y \
-                meson \
-                ninja-build \
-                python3-pip \
-                python3-pyelftools \
-                pkg-config \
-                numactl-devel \
-                libpcap-devel \
-                kernel-devel \
-                python3-devel \
-                git \
-                wget \
-                pciutils \
-                net-tools
+            if [ "$EUID" -ne 0 ]; then
+                sudo yum groupinstall -y "Development Tools"
+                sudo yum install -y \
+                    meson \
+                    ninja-build \
+                    python3-pip \
+                    python3-pyelftools \
+                    pkg-config \
+                    numactl-devel \
+                    libpcap-devel \
+                    kernel-devel \
+                    python3-devel \
+                    git \
+                    wget \
+                    pciutils \
+                    net-tools
+            else
+                yum groupinstall -y "Development Tools"
+                yum install -y \
+                    meson \
+                    ninja-build \
+                    python3-pip \
+                    python3-pyelftools \
+                    pkg-config \
+                    numactl-devel \
+                    libpcap-devel \
+                    kernel-devel \
+                    python3-devel \
+                    git \
+                    wget \
+                    pciutils \
+                    net-tools
+            fi
             ;;
         *)
             echo "❌ Unsupported OS: $OS"
@@ -148,10 +213,13 @@ install_dpdk() {
     
     # Install DPDK
     echo "Installing DPDK..."
-    sudo ninja -C build install
-    
-    # Update library cache
-    sudo ldconfig
+    if [ "$EUID" -ne 0 ]; then
+        sudo ninja -C build install
+        sudo ldconfig
+    else
+        ninja -C build install
+        ldconfig
+    fi
     
     echo "✅ DPDK installed"
     echo ""
@@ -162,6 +230,8 @@ setup_hugepages() {
     echo "═══════════════════════════════════════════════════════════════════"
     echo " Configuring hugepages..."
     echo "═══════════════════════════════════════════════════════════════════"
+    
+    ensure_sudo
     
     # Detect hugepage directory first
     if ! detect_hugepage_dir; then
@@ -174,13 +244,22 @@ setup_hugepages() {
     # Mount hugepages if not already mounted
     if ! mount | grep -q hugetlbfs; then
         echo "Mounting hugetlbfs..."
-        sudo mkdir -p /mnt/huge
-        sudo mount -t hugetlbfs nodev /mnt/huge
+        if [ "$EUID" -ne 0 ]; then
+            sudo mkdir -p /mnt/huge
+            sudo mount -t hugetlbfs nodev /mnt/huge
+        else
+            mkdir -p /mnt/huge
+            mount -t hugetlbfs nodev /mnt/huge
+        fi
     fi
     
     # Allocate hugepages
     echo "Allocating 1024 hugepages..."
-    echo 1024 | sudo tee ${HUGEPAGE_DIR}/nr_hugepages
+    if [ "$EUID" -ne 0 ]; then
+        echo 1024 | sudo tee ${HUGEPAGE_DIR}/nr_hugepages
+    else
+        echo 1024 > ${HUGEPAGE_DIR}/nr_hugepages
+    fi
     
     # Verify allocation
     sleep 1
@@ -190,12 +269,20 @@ setup_hugepages() {
     # Make hugepages persistent
     if ! grep -q "vm.nr_hugepages" /etc/sysctl.conf 2>/dev/null; then
         echo "Making hugepages persistent..."
-        echo "vm.nr_hugepages = 1024" | sudo tee -a /etc/sysctl.conf
+        if [ "$EUID" -ne 0 ]; then
+            echo "vm.nr_hugepages = 1024" | sudo tee -a /etc/sysctl.conf
+        else
+            echo "vm.nr_hugepages = 1024" >> /etc/sysctl.conf
+        fi
     fi
     
     # Add to /etc/fstab if not present
     if ! grep -q "/mnt/huge" /etc/fstab 2>/dev/null; then
-        echo "nodev /mnt/huge hugetlbfs defaults 0 0" | sudo tee -a /etc/fstab
+        if [ "$EUID" -ne 0 ]; then
+            echo "nodev /mnt/huge hugetlbfs defaults 0 0" | sudo tee -a /etc/fstab
+        else
+            echo "nodev /mnt/huge hugetlbfs defaults 0 0" >> /etc/fstab
+        fi
     fi
     
     echo "✅ Hugepages configured"
@@ -208,13 +295,23 @@ load_kernel_modules() {
     echo " Loading kernel modules..."
     echo "═══════════════════════════════════════════════════════════════════"
     
+    ensure_sudo
+    
     # Load uio module
-    sudo modprobe uio || echo "  uio module already loaded or not available"
+    if [ "$EUID" -ne 0 ]; then
+        sudo modprobe uio || echo "  uio module already loaded or not available"
+    else
+        modprobe uio || echo "  uio module already loaded or not available"
+    fi
     
     # Load vfio-pci (prefer this over igb_uio)
     if modinfo vfio-pci &>/dev/null; then
         echo "Loading vfio-pci..."
-        sudo modprobe vfio-pci
+        if [ "$EUID" -ne 0 ]; then
+            sudo modprobe vfio-pci
+        else
+            modprobe vfio-pci
+        fi
     else
         echo "⚠️  vfio-pci not available"
     fi
@@ -234,17 +331,21 @@ setup_venv() {
     # Create venv if it doesn't exist
     if [ ! -d "$VENV_DIR" ]; then
         echo "Creating virtual environment at $VENV_DIR..."
-        python3 -m venv "$VENV_DIR"
+        run_as_user python3 -m venv "$VENV_DIR"
+        
+        if [ $? -ne 0 ]; then
+            echo ""
+            echo "❌ Failed to create virtual environment"
+            exit 1
+        fi
+        
+        # Fix ownership if created as root
+        if [ "$EUID" -eq 0 ]; then
+            chown -R "$ACTUAL_UID:$ACTUAL_GID" "$VENV_DIR"
+        fi
     else
         echo "Virtual environment already exists"
     fi
-    
-    # Activate venv
-    source "$VENV_DIR/bin/activate"
-    
-    # Upgrade pip
-    echo "Upgrading pip..."
-    pip install --upgrade pip
     
     echo "✅ Virtual environment ready"
     echo ""
@@ -256,17 +357,16 @@ install_python_deps() {
     echo " Installing Python dependencies..."
     echo "═══════════════════════════════════════════════════════════════════"
     
-    # Make sure venv is activated
-    if [ -z "$VIRTUAL_ENV" ]; then
-        source "$VENV_DIR/bin/activate"
-    fi
+    cd "$SCRIPT_DIR"
     
     if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
         echo "Installing from requirements.txt..."
-        pip install -r "$SCRIPT_DIR/requirements.txt"
+        run_as_user "$VENV_DIR/bin/pip" install --upgrade pip
+        run_as_user "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
     else
         echo "requirements.txt not found, installing core packages..."
-        pip install flask flask-cors flask-socketio gevent netifaces psutil requests
+        run_as_user "$VENV_DIR/bin/pip" install --upgrade pip
+        run_as_user "$VENV_DIR/bin/pip" install flask flask-cors flask-socketio gevent netifaces psutil requests
     fi
     
     echo "✅ Python dependencies installed"
@@ -299,9 +399,14 @@ build_generator() {
     
     cd "$SCRIPT_DIR"
     
-    # Build the DPDK engine
-    make clean
-    make
+    # Build the DPDK engine as actual user
+    run_as_user make clean
+    run_as_user make
+    
+    # Fix ownership if built as root
+    if [ "$EUID" -eq 0 ]; then
+        chown -R "$ACTUAL_UID:$ACTUAL_GID" "$SCRIPT_DIR/build" 2>/dev/null || true
+    fi
     
     echo "✅ NetGen Pro DPDK Engine built successfully"
     echo ""
@@ -340,6 +445,11 @@ EOF
     
     chmod +x "$SCRIPT_DIR/activate.sh"
     
+    # Fix ownership if created as root
+    if [ "$EUID" -eq 0 ]; then
+        chown "$ACTUAL_UID:$ACTUAL_GID" "$SCRIPT_DIR/activate.sh"
+    fi
+    
     echo "✅ Created activate.sh helper script"
     echo ""
 }
@@ -359,12 +469,11 @@ update_start_script() {
         # Backup original
         cp "$SCRIPT_DIR/start.sh" "$SCRIPT_DIR/start.sh.bak"
         
-        # Add venv activation after shebang
-        sed -i '2i\
+        # Add venv activation after shebang and comments
+        sed -i '/^SCRIPT_DIR=/i\
 # Activate virtual environment\
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"\
-if [ -f "$SCRIPT_DIR/venv/bin/activate" ]; then\
-    source "$SCRIPT_DIR/venv/bin/activate"\
+if [ -f "$(dirname "$0")/venv/bin/activate" ]; then\
+    source "$(dirname "$0")/venv/bin/activate"\
 fi\
 ' "$SCRIPT_DIR/start.sh"
         
@@ -391,7 +500,7 @@ main() {
     fi
     
     # Check for existing DPDK installation
-    if pkg-config --exists libdpdk; then
+    if pkg-config --exists libdpdk 2>/dev/null; then
         echo "✅ DPDK already installed: $(pkg-config --modversion libdpdk)"
         read -p "Skip DPDK installation? (Y/n) " -n 1 -r
         echo
@@ -415,6 +524,12 @@ main() {
     update_start_script
     build_generator
     setup_interfaces
+    
+    # Fix ownership of entire directory if run as root
+    if [ "$EUID" -eq 0 ]; then
+        echo "Fixing file ownership..."
+        chown -R "$ACTUAL_UID:$ACTUAL_GID" "$SCRIPT_DIR"
+    fi
     
     echo "╔════════════════════════════════════════════════════════════════════╗"
     echo "║                    Installation Complete!                          ║"
