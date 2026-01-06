@@ -1,0 +1,41 @@
+# Build artifacts
+build/
+*.o
+*.so
+*.a
+dpdk_engine
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+
+# DPDK build
+/tmp/dpdk-*/
+
+# User data
+profiles_*.json
