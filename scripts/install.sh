@@ -3,13 +3,14 @@
 #
 # NetGen Pro - DPDK Edition Installation Script
 # Installs DPDK, dependencies, and sets up the environment
-# FIXED: Proper hugepage directory detection for all systems
+# FIXED: Proper hugepage detection + Python venv support
 #
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
 DPDK_VERSION="23.11"
+VENV_DIR="$SCRIPT_DIR/venv"
 
 echo "╔════════════════════════════════════════════════════════════════════╗"
 echo "║          NetGen Pro - DPDK Edition Installer                       ║"
@@ -79,15 +80,13 @@ install_dependencies() {
                 meson \
                 ninja-build \
                 python3-pip \
+                python3-venv \
                 python3-pyelftools \
                 pkg-config \
                 libnuma-dev \
                 libpcap-dev \
                 linux-headers-$(uname -r) \
                 python3-dev \
-                python3-flask \
-                python3-flask-cors \
-                python3-flask-socketio \
                 git \
                 wget \
                 pciutils \
@@ -105,14 +104,10 @@ install_dependencies() {
                 libpcap-devel \
                 kernel-devel \
                 python3-devel \
-                python3-flask \
                 git \
                 wget \
                 pciutils \
                 net-tools
-            
-            # Install Flask extensions via pip
-            pip3 install flask-cors flask-socketio
             ;;
         *)
             echo "❌ Unsupported OS: $OS"
@@ -228,6 +223,56 @@ load_kernel_modules() {
     echo ""
 }
 
+# Function to setup Python virtual environment
+setup_venv() {
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo " Setting up Python virtual environment..."
+    echo "═══════════════════════════════════════════════════════════════════"
+    
+    cd "$SCRIPT_DIR"
+    
+    # Create venv if it doesn't exist
+    if [ ! -d "$VENV_DIR" ]; then
+        echo "Creating virtual environment at $VENV_DIR..."
+        python3 -m venv "$VENV_DIR"
+    else
+        echo "Virtual environment already exists"
+    fi
+    
+    # Activate venv
+    source "$VENV_DIR/bin/activate"
+    
+    # Upgrade pip
+    echo "Upgrading pip..."
+    pip install --upgrade pip
+    
+    echo "✅ Virtual environment ready"
+    echo ""
+}
+
+# Function to install Python requirements
+install_python_deps() {
+    echo "═══════════════════════════════════════════════════════════════════"
+    echo " Installing Python dependencies..."
+    echo "═══════════════════════════════════════════════════════════════════"
+    
+    # Make sure venv is activated
+    if [ -z "$VIRTUAL_ENV" ]; then
+        source "$VENV_DIR/bin/activate"
+    fi
+    
+    if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
+        echo "Installing from requirements.txt..."
+        pip install -r "$SCRIPT_DIR/requirements.txt"
+    else
+        echo "requirements.txt not found, installing core packages..."
+        pip install flask flask-cors flask-socketio gevent netifaces psutil requests
+    fi
+    
+    echo "✅ Python dependencies installed"
+    echo ""
+}
+
 # Function to setup network interfaces
 setup_interfaces() {
     echo "═══════════════════════════════════════════════════════════════════"
@@ -262,22 +307,69 @@ build_generator() {
     echo ""
 }
 
-# Function to install Python requirements
-install_python_deps() {
+# Function to create activation helper script
+create_activation_script() {
     echo "═══════════════════════════════════════════════════════════════════"
-    echo " Installing Python dependencies..."
+    echo " Creating activation helper script..."
     echo "═══════════════════════════════════════════════════════════════════"
     
-    if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
-        echo "Installing from requirements.txt..."
-        pip3 install --user -r "$SCRIPT_DIR/requirements.txt"
-    else
-        echo "requirements.txt not found, installing core packages..."
-        pip3 install --user flask flask-cors flask-socketio gevent netifaces psutil requests
+    cat > "$SCRIPT_DIR/activate.sh" << 'EOF'
+#!/bin/bash
+# NetGen Pro - DPDK Edition
+# Virtual environment activation script
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -f "$SCRIPT_DIR/venv/bin/activate" ]; then
+    source "$SCRIPT_DIR/venv/bin/activate"
+    echo "✅ Virtual environment activated"
+    echo ""
+    echo "To start NetGen Pro:"
+    echo "  ./start.sh"
+    echo ""
+    echo "Or manually:"
+    echo "  cd web"
+    echo "  python dpdk_control_server.py --auto-start-engine"
+    echo ""
+    echo "To deactivate: deactivate"
+else
+    echo "❌ Virtual environment not found"
+    echo "   Run ./scripts/install.sh first"
+fi
+EOF
+    
+    chmod +x "$SCRIPT_DIR/activate.sh"
+    
+    echo "✅ Created activate.sh helper script"
+    echo ""
+}
+
+# Function to update start.sh to use venv
+update_start_script() {
+    echo "Updating start.sh to use virtual environment..."
+    
+    # Check if start.sh exists
+    if [ ! -f "$SCRIPT_DIR/start.sh" ]; then
+        echo "⚠️  start.sh not found, skipping update"
+        return
     fi
     
-    echo "✅ Python dependencies installed"
-    echo ""
+    # Add venv activation to start.sh if not already present
+    if ! grep -q "source.*venv/bin/activate" "$SCRIPT_DIR/start.sh"; then
+        # Backup original
+        cp "$SCRIPT_DIR/start.sh" "$SCRIPT_DIR/start.sh.bak"
+        
+        # Add venv activation after shebang
+        sed -i '2i\
+# Activate virtual environment\
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"\
+if [ -f "$SCRIPT_DIR/venv/bin/activate" ]; then\
+    source "$SCRIPT_DIR/venv/bin/activate"\
+fi\
+' "$SCRIPT_DIR/start.sh"
+        
+        echo "✅ Updated start.sh to use virtual environment"
+    fi
 }
 
 # Main installation flow
@@ -286,7 +378,8 @@ main() {
     echo "  • System dependencies"
     echo "  • DPDK $DPDK_VERSION"
     echo "  • Hugepages configuration"
-    echo "  • Python dependencies"
+    echo "  • Python virtual environment"
+    echo "  • Python dependencies (in venv)"
     echo "  • NetGen Pro DPDK engine"
     echo ""
     read -p "Continue? (y/N) " -n 1 -r
@@ -316,7 +409,10 @@ main() {
     
     setup_hugepages || echo "⚠️  Hugepage setup failed - use fix-hugepages.sh to configure manually"
     load_kernel_modules
+    setup_venv
     install_python_deps
+    create_activation_script
+    update_start_script
     build_generator
     setup_interfaces
     
@@ -324,20 +420,26 @@ main() {
     echo "║                    Installation Complete!                          ║"
     echo "╚════════════════════════════════════════════════════════════════════╝"
     echo ""
+    echo "Python virtual environment created at: $VENV_DIR"
+    echo ""
     echo "Next steps:"
     echo ""
-    echo "1. Bind network interface to DPDK:"
+    echo "1. Activate the virtual environment:"
+    echo "   source activate.sh"
+    echo "   (or manually: source venv/bin/activate)"
+    echo ""
+    echo "2. Bind network interface to DPDK:"
     echo "   dpdk-devbind.py --status"
     echo "   sudo dpdk-devbind.py --bind=vfio-pci <PCI_ADDRESS>"
     echo ""
-    echo "2. Start the web control server:"
-    echo "   cd web"
-    echo "   python3 dpdk_control_server.py --auto-start-engine"
+    echo "3. Start the web control server:"
+    echo "   ./start.sh"
+    echo "   (or manually: cd web && python dpdk_control_server.py --auto-start-engine)"
     echo ""
-    echo "3. Access the web UI at:"
+    echo "4. Access the web UI at:"
     echo "   http://localhost:8080"
     echo ""
-    echo "For help, see README.md or run fix-hugepages.sh if needed"
+    echo "For help, see README.md"
     echo ""
 }
 
