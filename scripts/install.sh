@@ -263,7 +263,13 @@ install_python_deps() {
     echo " Installing Python dependencies..."
     echo "═══════════════════════════════════════════════════════════════════"
     
-    pip3 install --user flask flask-cors flask-socketio gevent
+    if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
+        echo "Installing from requirements.txt..."
+        pip3 install --user -r "$SCRIPT_DIR/requirements.txt"
+    else
+        echo "requirements.txt not found, installing core packages..."
+        pip3 install --user flask flask-cors flask-socketio gevent netifaces psutil requests
+    fi
     
     echo "✅ Python dependencies installed"
     echo ""
