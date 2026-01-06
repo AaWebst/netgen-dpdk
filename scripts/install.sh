@@ -3,7 +3,7 @@
 #
 # NetGen Pro - DPDK Edition Installation Script
 # Installs DPDK, dependencies, and sets up the environment
-# FIXED: Proper hugepage detection + Python venv support + WORKING sudo handling
+# FIXED: Actually working sudo support with proper directory permissions
 #
 
 set -e
@@ -41,14 +41,13 @@ echo "Install directory: $SCRIPT_DIR"
 echo "Installing as user: $ACTUAL_USER"
 echo ""
 
-# Function to run command as actual user
-run_as_user() {
-    if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-        sudo -u "$SUDO_USER" -H "$@"
-    else
-        "$@"
-    fi
-}
+# Fix directory ownership FIRST if we're root
+if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
+    echo "Fixing install directory ownership..."
+    chown -R "$SUDO_USER:$SUDO_USER" "$SCRIPT_DIR"
+    echo "✅ Directory ownership fixed"
+    echo ""
+fi
 
 # Function to ensure sudo is available when not root
 ensure_sudo() {
@@ -263,10 +262,10 @@ setup_venv() {
     if [ ! -d "$VENV_DIR" ]; then
         echo "Creating virtual environment at $VENV_DIR..."
         
-        # Run as actual user with their HOME environment
+        # If running as root, switch to actual user entirely
         if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-            # Running with sudo - create as the actual user
-            sudo -u "$SUDO_USER" HOME="$ACTUAL_HOME" python3 -m venv "$VENV_DIR"
+            # Run the entire venv creation as the actual user
+            su - "$SUDO_USER" -c "cd '$SCRIPT_DIR' && python3 -m venv '$VENV_DIR'"
         else
             # Running as regular user
             python3 -m venv "$VENV_DIR"
@@ -296,8 +295,7 @@ install_python_deps() {
     if [ -f "$SCRIPT_DIR/requirements.txt" ]; then
         echo "Installing from requirements.txt..."
         if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-            sudo -u "$SUDO_USER" HOME="$ACTUAL_HOME" "$VENV_DIR/bin/pip" install --upgrade pip
-            sudo -u "$SUDO_USER" HOME="$ACTUAL_HOME" "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
+            su - "$SUDO_USER" -c "cd '$SCRIPT_DIR' && '$VENV_DIR/bin/pip' install --upgrade pip && '$VENV_DIR/bin/pip' install -r '$SCRIPT_DIR/requirements.txt'"
         else
             "$VENV_DIR/bin/pip" install --upgrade pip
             "$VENV_DIR/bin/pip" install -r "$SCRIPT_DIR/requirements.txt"
@@ -305,8 +303,7 @@ install_python_deps() {
     else
         echo "requirements.txt not found, installing core packages..."
         if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-            sudo -u "$SUDO_USER" HOME="$ACTUAL_HOME" "$VENV_DIR/bin/pip" install --upgrade pip
-            sudo -u "$SUDO_USER" HOME="$ACTUAL_HOME" "$VENV_DIR/bin/pip" install flask flask-cors flask-socketio gevent netifaces psutil requests
+            su - "$SUDO_USER" -c "cd '$SCRIPT_DIR' && '$VENV_DIR/bin/pip' install --upgrade pip && '$VENV_DIR/bin/pip' install flask flask-cors flask-socketio gevent netifaces psutil requests"
         else
             "$VENV_DIR/bin/pip" install --upgrade pip
             "$VENV_DIR/bin/pip" install flask flask-cors flask-socketio gevent netifaces psutil requests
@@ -345,8 +342,7 @@ build_generator() {
     
     # Build as actual user
     if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-        sudo -u "$SUDO_USER" HOME="$ACTUAL_HOME" make clean
-        sudo -u "$SUDO_USER" HOME="$ACTUAL_HOME" make
+        su - "$SUDO_USER" -c "cd '$SCRIPT_DIR' && make clean && make"
     else
         make clean
         make
@@ -389,11 +385,6 @@ EOF
     
     chmod +x "$SCRIPT_DIR/activate.sh"
     
-    # Fix ownership if run as root
-    if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-        chown "$SUDO_USER:$SUDO_USER" "$SCRIPT_DIR/activate.sh"
-    fi
-    
     echo "✅ Created activate.sh helper script"
     echo ""
 }
@@ -420,15 +411,6 @@ fi\
 ' "$SCRIPT_DIR/start.sh"
         
         echo "✅ Updated start.sh to use virtual environment"
-    fi
-}
-
-# Function to fix all ownership
-fix_ownership() {
-    if [ "$EUID" -eq 0 ] && [ -n "$SUDO_USER" ]; then
-        echo "Fixing file ownership..."
-        chown -R "$SUDO_USER:$SUDO_USER" "$SCRIPT_DIR"
-        echo "✅ Ownership fixed"
     fi
 }
 
@@ -474,7 +456,6 @@ main() {
     create_activation_script
     update_start_script
     build_generator
-    fix_ownership
     setup_interfaces
     
     echo "╔════════════════════════════════════════════════════════════════════╗"
