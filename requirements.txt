@@ -1,27 +1,10 @@
-# NetGen Pro - DPDK Edition
-# Python Dependencies
-
-# Web Framework
 Flask==3.0.0
 Flask-CORS==4.0.0
 Flask-SocketIO==5.3.5
-
-# Async Support
-gevent==23.9.1
-gevent-websocket==0.10.1
-
-# Python SocketIO
 python-socketio==5.10.0
 python-engineio==4.8.0
-
-# Network Interface Detection
-netifaces==0.11.0
-
-# System utilities
-psutil==5.9.6
-
-# HTTP Requests (for multi-source coordination)
+gevent==23.9.1
+gevent-websocket==0.10.1
 requests==2.31.0
-
-# Database
-# Note: sqlite3 is included in Python standard library
+netifaces==0.11.0
+psutil==5.9.6
