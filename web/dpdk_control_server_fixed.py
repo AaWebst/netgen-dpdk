@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-NetGen Pro - DPDK Edition v2.2
-Complete control server with ALL traffic presets from Python version
+NetGen Pro - DPDK Edition v2.0
+Complete Python control server with traffic presets and all features
 """
 
 from flask import Flask, render_template, jsonify, request, send_file
@@ -34,164 +34,112 @@ DATA_DIR = os.path.join(SCRIPT_DIR, 'data')
 for d in [DATA_DIR, os.path.join(DATA_DIR, 'captures'), os.path.join(DATA_DIR, 'exports')]:
     os.makedirs(d, exist_ok=True)
 
-# ============================================================================
-# ALL TRAFFIC PRESETS FROM PYTHON VERSION
-# ============================================================================
+# Traffic Presets - This is what the GUI needs!
 TRAFFIC_PRESETS = {
-    # Custom Bandwidth
-    'custom_bandwidth': {
-        'name': '⚡ Custom Bandwidth',
-        'description': 'User-defined bandwidth (you specify the rate)',
-        'total_rate': 0,
-        'is_custom': True,
-        'profiles': [
-            {'name': 'Custom-UDP', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 0, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-        ]
-    },
-    
-    # Very Low Bandwidth (< 10 Mbps)
-    '1_mbps': {
-        'name': '1 Mbps',
-        'description': 'Single stream 1 Mbps UDP',
-        'total_rate': 1,
-        'profiles': [
-            {'name': '1M-UDP', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 1, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-        ]
-    },
-    '5_mbps_mixed': {
-        'name': '5 Mbps Mixed',
-        'description': 'Very low bandwidth testing',
-        'total_rate': 5,
-        'profiles': [
-            {'name': '5M-UDP', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 3, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-            {'name': '5M-TCP', 'protocol': 'tcp', 'packet_size': 1500, 'rate_mbps': 1.5, 'dst_port': 80, 'dst_ip': '192.168.1.100'},
-            {'name': '5M-ICMP', 'protocol': 'icmp', 'packet_size': 64, 'rate_mbps': 0.5, 'dst_port': 0, 'dst_ip': '192.168.1.100'},
-        ]
-    },
-    
-    # Low Bandwidth (10-100 Mbps)
-    '10_mbps': {
-        'name': '10 Mbps',
-        'description': 'Single stream 10 Mbps UDP',
+    'light_web': {
+        'name': 'Light Web Traffic',
+        'description': 'Simulate light web browsing (10 Mbps)',
         'total_rate': 10,
-        'profiles': [
-            {'name': '10M-UDP', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 10, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-        ]
+        'profiles': [{
+            'name': 'Web-Light',
+            'dst_ip': '192.168.1.100',
+            'dst_port': 80,
+            'protocol': 'tcp',
+            'packet_size': 512,
+            'rate_mbps': 10
+        }]
     },
-    '25_mbps_mixed': {
-        'name': '25 Mbps Mixed',
-        'description': 'Low bandwidth testing',
+    'video_streaming': {
+        'name': 'Video Streaming',
+        'description': 'HD video streaming (25 Mbps)',
         'total_rate': 25,
-        'profiles': [
-            {'name': '25M-UDP', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 15, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-            {'name': '25M-TCP', 'protocol': 'tcp', 'packet_size': 1500, 'rate_mbps': 8, 'dst_port': 80, 'dst_ip': '192.168.1.100'},
-            {'name': '25M-ICMP', 'protocol': 'icmp', 'packet_size': 64, 'rate_mbps': 2, 'dst_port': 0, 'dst_ip': '192.168.1.100'},
-        ]
+        'profiles': [{
+            'name': 'Video-HD',
+            'dst_ip': '192.168.1.100',
+            'dst_port': 443,
+            'protocol': 'tcp',
+            'packet_size': 1400,
+            'rate_mbps': 25
+        }]
     },
-    '50_mbps_mixed': {
-        'name': '50 Mbps Mixed',
-        'description': 'Medium bandwidth testing',
-        'total_rate': 50,
-        'profiles': [
-            {'name': '50M-UDP', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 30, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-            {'name': '50M-TCP', 'protocol': 'tcp', 'packet_size': 1500, 'rate_mbps': 15, 'dst_port': 80, 'dst_ip': '192.168.1.100'},
-            {'name': '50M-Small', 'protocol': 'udp', 'packet_size': 64, 'rate_mbps': 5, 'dst_port': 5001, 'dst_ip': '192.168.1.100'},
-        ]
-    },
-    'voip_traffic': {
-        'name': 'VoIP Traffic',
-        'description': 'Voice over IP simulation (90 Mbps)',
-        'total_rate': 90,
-        'profiles': [
-            {'name': 'RTP-Voice', 'protocol': 'udp', 'packet_size': 200, 'rate_mbps': 80, 'dst_port': 5004, 'dst_ip': '192.168.1.100'},
-            {'name': 'SIP-Signaling', 'protocol': 'udp', 'packet_size': 500, 'rate_mbps': 10, 'dst_port': 5060, 'dst_ip': '192.168.1.100'},
-        ]
-    },
-    '100_mbps': {
-        'name': '100 Mbps',
-        'description': 'Single stream 100 Mbps UDP',
+    'heavy_download': {
+        'name': 'Heavy Download',
+        'description': 'File download simulation (100 Mbps)',
         'total_rate': 100,
-        'profiles': [
-            {'name': '100M-UDP', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 100, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-        ]
+        'profiles': [{
+            'name': 'Download-Heavy',
+            'dst_ip': '192.168.1.100',
+            'dst_port': 443,
+            'protocol': 'tcp',
+            'packet_size': 1500,
+            'rate_mbps': 100
+        }]
     },
-    
-    # Medium Bandwidth (200-1000 Mbps)
-    'imix_realistic': {
-        'name': 'IMIX Realistic',
-        'description': 'Internet Mix - realistic packet size distribution (200 Mbps)',
-        'total_rate': 200,
-        'profiles': [
-            {'name': 'IMIX-Tiny-64B', 'protocol': 'udp', 'packet_size': 64, 'rate_mbps': 15, 'dst_port': 5000, 'dscp': 46, 'dst_ip': '192.168.1.100'},
-            {'name': 'IMIX-Small-128B', 'protocol': 'udp', 'packet_size': 128, 'rate_mbps': 30, 'dst_port': 5001, 'dscp': 46, 'dst_ip': '192.168.1.100'},
-            {'name': 'IMIX-Medium-512B', 'protocol': 'udp', 'packet_size': 512, 'rate_mbps': 50, 'dst_port': 5002, 'dscp': 46, 'dst_ip': '192.168.1.100'},
-            {'name': 'IMIX-Large-1400B', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 100, 'dst_port': 5003, 'dscp': 46, 'dst_ip': '192.168.1.100'},
-            {'name': 'IMIX-Jumbo-1518B', 'protocol': 'udp', 'packet_size': 1518, 'rate_mbps': 5, 'dst_port': 5004, 'dscp': 46, 'dst_ip': '192.168.1.100'},
-        ]
+    'gaming': {
+        'name': 'Gaming Traffic',
+        'description': 'Low-latency gaming (5 Mbps)',
+        'total_rate': 5,
+        'profiles': [{
+            'name': 'Gaming',
+            'dst_ip': '192.168.1.100',
+            'dst_port': 27015,
+            'protocol': 'udp',
+            'packet_size': 128,
+            'rate_mbps': 5
+        }]
     },
-    'mixed_1g': {
-        'name': '1 Gbps Mixed',
-        'description': 'Balanced mix of UDP, TCP, and ICMP',
+    'voip': {
+        'name': 'VoIP Call',
+        'description': 'Voice over IP (1 Mbps)',
+        'total_rate': 1,
+        'profiles': [{
+            'name': 'VoIP',
+            'dst_ip': '192.168.1.100',
+            'dst_port': 5060,
+            'protocol': 'udp',
+            'packet_size': 200,
+            'rate_mbps': 1
+        }]
+    },
+    'bulk_transfer': {
+        'name': 'Bulk Transfer',
+        'description': 'Maximum throughput test (1000 Mbps)',
         'total_rate': 1000,
-        'profiles': [
-            {'name': 'UDP-Large', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 400, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-            {'name': 'UDP-Small', 'protocol': 'udp', 'packet_size': 64, 'rate_mbps': 200, 'dst_port': 5001, 'dst_ip': '192.168.1.100'},
-            {'name': 'TCP-Web', 'protocol': 'tcp', 'packet_size': 1500, 'rate_mbps': 300, 'dst_port': 80, 'dst_ip': '192.168.1.100'},
-            {'name': 'ICMP', 'protocol': 'icmp', 'packet_size': 64, 'rate_mbps': 100, 'dst_port': 0, 'dst_ip': '192.168.1.100'},
-        ]
+        'profiles': [{
+            'name': 'Bulk-1G',
+            'dst_ip': '192.168.1.100',
+            'dst_port': 5001,
+            'protocol': 'tcp',
+            'packet_size': 1500,
+            'rate_mbps': 1000
+        }]
     },
-    'web_traffic': {
-        'name': 'Web Traffic',
-        'description': 'HTTP/HTTPS simulation (1 Gbps)',
-        'total_rate': 1000,
-        'profiles': [
-            {'name': 'HTTP', 'protocol': 'tcp', 'packet_size': 1500, 'rate_mbps': 400, 'dst_port': 80, 'dst_ip': '192.168.1.100'},
-            {'name': 'HTTPS', 'protocol': 'tcp', 'packet_size': 1500, 'rate_mbps': 600, 'dst_port': 443, 'dst_ip': '192.168.1.100'},
-        ]
-    },
-    'imix_standard': {
-        'name': 'IMIX Standard',
-        'description': 'Standard IMIX 7:4:1 ratio (64:594:1500 bytes) (1 Gbps)',
-        'total_rate': 1000,
-        'profiles': [
-            {'name': 'IMIX-64B', 'protocol': 'udp', 'packet_size': 64, 'rate_mbps': 583, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-            {'name': 'IMIX-594B', 'protocol': 'udp', 'packet_size': 594, 'rate_mbps': 333, 'dst_port': 5001, 'dst_ip': '192.168.1.100'},
-            {'name': 'IMIX-1500B', 'protocol': 'udp', 'packet_size': 1500, 'rate_mbps': 84, 'dst_port': 5002, 'dst_ip': '192.168.1.100'},
-        ]
-    },
-    
-    # High Bandwidth (5-10+ Gbps)
-    'mixed_5g': {
-        'name': '5 Gbps Mixed',
-        'description': 'High-performance mixed traffic',
-        'total_rate': 5000,
-        'profiles': [
-            {'name': 'UDP-1', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 1500, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-            {'name': 'UDP-2', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 1500, 'dst_port': 5001, 'dst_ip': '192.168.1.100'},
-            {'name': 'TCP', 'protocol': 'tcp', 'packet_size': 1500, 'rate_mbps': 1500, 'dst_port': 80, 'dst_ip': '192.168.1.100'},
-            {'name': 'UDP-Small', 'protocol': 'udp', 'packet_size': 64, 'rate_mbps': 500, 'dst_port': 5002, 'dst_ip': '192.168.1.100'},
-        ]
-    },
-    'udp_flood': {
-        'name': 'UDP Flood (5 Gbps)',
-        'description': 'Pure UDP flooding',
-        'total_rate': 5000,
-        'profiles': [
-            {'name': 'UDP-Flood', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 5000, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-        ]
-    },
-    'mixed_10g': {
-        'name': '10 Gbps Mixed',
-        'description': 'Line rate testing for 10GbE',
+    'line_rate_10g': {
+        'name': 'Line-Rate 10G',
+        'description': 'Full 10 Gbps test',
         'total_rate': 10000,
-        'profiles': [
-            {'name': '10G-UDP-1', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 2500, 'dst_port': 5000, 'dst_ip': '192.168.1.100'},
-            {'name': '10G-UDP-2', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 2500, 'dst_port': 5001, 'dst_ip': '192.168.1.100'},
-            {'name': '10G-UDP-3', 'protocol': 'udp', 'packet_size': 1400, 'rate_mbps': 2500, 'dst_port': 5002, 'dst_ip': '192.168.1.100'},
-            {'name': '10G-TCP', 'protocol': 'tcp', 'packet_size': 1500, 'rate_mbps': 2000, 'dst_port': 80, 'dst_ip': '192.168.1.100'},
-            {'name': '10G-Small', 'protocol': 'udp', 'packet_size': 64, 'rate_mbps': 500, 'dst_port': 5003, 'dst_ip': '192.168.1.100'},
-        ]
+        'profiles': [{
+            'name': 'LineRate-10G',
+            'dst_ip': '192.168.1.100',
+            'dst_port': 5001,
+            'protocol': 'udp',
+            'packet_size': 1500,
+            'rate_mbps': 10000
+        }]
     },
+    'custom_bandwidth': {
+        'name': 'Custom Bandwidth',
+        'description': 'User-defined rate',
+        'total_rate': 100,
+        'profiles': [{
+            'name': 'Custom-100M',
+            'dst_ip': '192.168.1.100',
+            'dst_port': 5000,
+            'protocol': 'udp',
+            'packet_size': 1024,
+            'rate_mbps': 100
+        }]
+    }
 }
 
 def init_database():
@@ -283,11 +231,11 @@ def index():
 
 @app.route('/api/status')
 def api_status():
-    return jsonify({'running': dpdk.is_running(), 'config': current_config, 'version': '2.2-DPDK'})
+    return jsonify({'running': dpdk.is_running(), 'config': current_config, 'version': '2.0-DPDK'})
 
 @app.route('/api/presets')
 def api_presets():
-    """Return ALL traffic presets from Python version"""
+    """Return traffic presets for GUI"""
     return jsonify(TRAFFIC_PRESETS)
 
 @app.route('/api/start', methods=['POST'])
@@ -447,19 +395,14 @@ import atexit
 atexit.register(cleanup)
 
 if __name__ == '__main__':
-    print("🚀 NetGen Pro - DPDK Edition v2.2")
+    print("🚀 NetGen Pro - DPDK Edition v2.0")
     print("="*60)
     print(f"Engine: {DPDK_ENGINE_PATH}")
     print(f"Database: {DB_PATH}")
-    print(f"Traffic Presets: {len(TRAFFIC_PRESETS)} presets loaded")
-    print("")
-    print("Available Presets:")
-    for key, preset in TRAFFIC_PRESETS.items():
-        print(f"  • {preset['name']} - {preset['total_rate']} Mbps")
-    print("")
+    print(f"Presets: {len(TRAFFIC_PRESETS)} traffic presets loaded")
     if not os.path.exists(DPDK_ENGINE_PATH):
         print(f"⚠️  Engine not found: {DPDK_ENGINE_PATH}")
-        print("   Engine will be started when traffic generation begins")
+        print("   Engine will be started on first traffic generation")
     print("✅ Starting on http://0.0.0.0:8080")
     print("="*60)
     try:
