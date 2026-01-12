@@ -12,11 +12,12 @@ Environment="PATH=/opt/netgen-dpdk/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/
 Environment="VIRTUAL_ENV=/opt/netgen-dpdk/venv"
 
 # Ensure hugepages are available
-ExecStartPre=/bin/bash -c 'if [ ! -d /mnt/huge ]; then mkdir -p /mnt/huge; mount -t hugetlbfs nodev /mnt/huge; fi'
-ExecStartPre=/bin/bash -c 'echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages || true'
+ExecStartPre=/bin/bash -c 'if [ ! -d /mnt/huge ]; then mkdir -p /mnt/huge && mount -t hugetlbfs nodev /mnt/huge; fi'
+ExecStartPre=/bin/bash -c 'echo 1024 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages 2>/dev/null || echo 1024 > /sys/devices/system/node/node0/hugepages/hugepages-2048kB/nr_hugepages 2>/dev/null || true'
 
-# Load kernel modules
-ExecStartPre=/sbin/modprobe -a uio vfio-pci || true
+# Load kernel modules (don't fail if already loaded)
+ExecStartPre=-/sbin/modprobe uio
+ExecStartPre=-/sbin/modprobe vfio-pci
 
 # Start the web control server
 ExecStart=/opt/netgen-dpdk/venv/bin/python /opt/netgen-dpdk/web/dpdk_control_server.py
@@ -26,8 +27,8 @@ Restart=always
 RestartSec=10
 
 # Cleanup on stop
-ExecStop=/bin/bash -c 'pkill -TERM -f dpdk_engine || true'
-ExecStopPost=/bin/bash -c 'rm -f /tmp/dpdk_engine_control.sock || true'
+ExecStop=/bin/bash -c 'pkill -TERM -f dpdk_engine 2>/dev/null || true'
+ExecStopPost=/bin/bash -c 'rm -f /tmp/dpdk_engine_control.sock 2>/dev/null || true'
 
 # Security
 NoNewPrivileges=false
