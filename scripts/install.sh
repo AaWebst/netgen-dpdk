@@ -481,3 +481,35 @@ main() {
 }
 
 main
+
+# Ask about systemd service installation
+echo "═══════════════════════════════════════════════════════════════════"
+echo " Systemd Service Installation (Optional)"
+echo "═══════════════════════════════════════════════════════════════════"
+echo ""
+echo "Would you like to install NetGen Pro as a systemd service?"
+echo "This will make it:"
+echo "  • Start automatically on boot"
+echo "  • Restart automatically if it crashes"
+echo "  • Integrate with system logging"
+echo ""
+read -p "Install systemd service? (Y/n) " -n 1 -r
+echo
+echo ""
+
+if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+    if [ -f "$SCRIPT_DIR/install-service.sh" ]; then
+        echo "Installing systemd service..."
+        bash "$SCRIPT_DIR/install-service.sh"
+    else
+        echo "⚠️  install-service.sh not found, skipping service installation"
+        echo "   You can install it later by running:"
+        echo "   sudo bash install-service.sh"
+    fi
+else
+    echo "Skipping systemd service installation"
+    echo ""
+    echo "To install later, run:"
+    echo "  sudo bash install-service.sh"
+fi
+echo ""
