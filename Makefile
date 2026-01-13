@@ -1,78 +1,90 @@
-# NetGen Pro - DPDK Edition Makefile
+# NetGen Pro DPDK - Complete Build System
 
-# DPDK configuration
-RTE_SDK ?= /usr/local/share/dpdk
-RTE_TARGET ?= x86_64-native-linux-gcc
-PKGCONF ?= pkg-config
-
-# If DPDK is installed via pkg-config
-ifneq ($(shell $(PKGCONF) --exists libdpdk && echo 0),0)
-$(error "DPDK not found. Please install DPDK or set RTE_SDK")
-endif
-
-# Compiler and flags
-CXX = g++
-CXXFLAGS = -O3 -g -std=c++17 -Wall -Wextra
-CXXFLAGS += $(shell $(PKGCONF) --cflags libdpdk)
-LDFLAGS = $(shell $(PKGCONF) --libs libdpdk)
+CC = g++
+CFLAGS = -O3 -march=native -Wall -Wextra -std=c++17
+CFLAGS += $(shell pkg-config --cflags libdpdk json-c 2>/dev/null || echo "-I/usr/local/include/dpdk -I/usr/include/json-c")
+LDFLAGS = $(shell pkg-config --libs libdpdk json-c 2>/dev/null || echo "-ldpdk -ljson-c")
 LDFLAGS += -pthread -lm
 
 # Directories
 SRC_DIR = src
 BUILD_DIR = build
-OBJ_DIR = $(BUILD_DIR)/obj
+WEB_DIR = web
 
-# Source files
-SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+# Targets
+TARGET = $(BUILD_DIR)/dpdk_engine_complete
+SRC = $(SRC_DIR)/dpdk_engine_complete.cpp
 
-# Target
-TARGET = $(BUILD_DIR)/dpdk_engine
+# Features
+CFLAGS += -DENABLE_RX_SUPPORT
+CFLAGS += -DENABLE_RFC2544
+CFLAGS += -DENABLE_HTTP_DNS
+CFLAGS += -DENABLE_IMPAIRMENTS
+CFLAGS += -DENABLE_IPV6_MPLS
 
-# Phony targets
-.PHONY: all clean install check-dpdk
+.PHONY: all clean install test help
 
-all: check-dpdk $(TARGET)
+all: $(TARGET)
+	@echo "✅ Build complete: $(TARGET)"
+	@echo "   Run with: sudo ./$(TARGET)"
 
-check-dpdk:
-	@echo "Checking DPDK installation..."
-	@$(PKGCONF) --exists libdpdk || (echo "ERROR: DPDK not found" && exit 1)
-	@echo "✅ DPDK found: $(shell $(PKGCONF) --modversion libdpdk)"
-
-$(TARGET): $(OBJECTS)
+$(TARGET): $(SRC)
+	@echo "🔨 Building NetGen Pro DPDK Complete..."
 	@mkdir -p $(BUILD_DIR)
-	@echo "Linking $@..."
-	$(CXX) $(OBJECTS) -o $@ $(LDFLAGS)
-	@echo "✅ Build complete: $@"
-
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	@mkdir -p $(OBJ_DIR)
-	@echo "Compiling $<..."
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS)
+	@echo "✅ Compilation successful"
 
 clean:
+	@echo "🧹 Cleaning build artifacts..."
 	rm -rf $(BUILD_DIR)
+	rm -f *.o *.a
 	@echo "✅ Clean complete"
 
 install: all
-	@echo "Installing dpdk_engine to /usr/local/bin..."
-	sudo cp $(TARGET) /usr/local/bin/
-	sudo chmod +x /usr/local/bin/dpdk_engine
-	@echo "✅ Installation complete"
+	@echo "📦 Installing NetGen Pro DPDK..."
+	mkdir -p /opt/netgen-pro-complete
+	cp -r . /opt/netgen-pro-complete/
+	@echo "✅ Installed to /opt/netgen-pro-complete"
 
-# Development helpers
-run: all
-	sudo $(TARGET) -l 0-3 -n 4 --proc-type primary
+test: all
+	@echo "🧪 Running tests..."
+	@echo "   Unit tests not yet implemented"
+	@echo "   Run integration tests manually with RFC 2544"
 
-debug: CXXFLAGS += -DDEBUG -g3
+help:
+	@echo "NetGen Pro DPDK - Complete Build System"
+	@echo ""
+	@echo "Targets:"
+	@echo "  make          - Build the DPDK engine"
+	@echo "  make clean    - Remove build artifacts"
+	@echo "  make install  - Install to /opt/netgen-pro-complete"
+	@echo "  make test     - Run tests"
+	@echo "  make help     - Show this help"
+	@echo ""
+	@echo "Features enabled:"
+	@echo "  ✓ Phase 2: HTTP/DNS protocols"
+	@echo "  ✓ Phase 3: RFC 2544 + RX support"
+	@echo "  ✓ Phase 4: Network impairments"
+	@echo "  ✓ Phase 5: IPv6/MPLS/Advanced"
+	@echo ""
+	@echo "Prerequisites:"
+	@echo "  - DPDK libraries (dpdk-dev)"
+	@echo "  - JSON-C library (libjson-c-dev)"
+	@echo "  - C++17 compiler (g++ or clang++)"
+	@echo ""
+
+# Development targets
+debug: CFLAGS += -g -DDEBUG -O0
 debug: all
+	@echo "✅ Debug build complete"
 
-# Show configuration
-info:
-	@echo "DPDK Version: $(shell $(PKGCONF) --modversion libdpdk)"
-	@echo "DPDK CFLAGS: $(shell $(PKGCONF) --cflags libdpdk)"
-	@echo "DPDK LDFLAGS: $(shell $(PKGCONF) --libs libdpdk)"
-	@echo "CXX: $(CXX)"
-	@echo "CXXFLAGS: $(CXXFLAGS)"
-	@echo "Sources: $(SOURCES)"
-	@echo "Objects: $(OBJECTS)"
+release: CFLAGS += -O3 -DNDEBUG
+release: all
+	@echo "✅ Release build complete"
+
+# Check dependencies
+check-deps:
+	@echo "Checking dependencies..."
+	@pkg-config --exists libdpdk && echo "  ✓ DPDK found" || echo "  ✗ DPDK not found"
+	@pkg-config --exists json-c && echo "  ✓ JSON-C found" || echo "  ✗ JSON-C not found"
+	@which g++ > /dev/null && echo "  ✓ g++ found" || echo "  ✗ g++ not found"
