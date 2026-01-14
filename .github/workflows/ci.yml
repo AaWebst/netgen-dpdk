@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-22.04
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Install Dependencies
       run: |
@@ -29,7 +29,7 @@ jobs:
         test -f build/dpdk_engine
     
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     
@@ -44,7 +44,7 @@ jobs:
         flake8 web/ --count --select=E9,F63,F7,F82 --show-source --statistics
     
     - name: Archive Build Artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: dpdk-engine
         path: build/dpdk_engine
@@ -54,10 +54,10 @@ jobs:
     needs: build
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     

@@ -16,17 +16,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Advanced Protocol Toggles** - Easy enable/disable for IPv6, MPLS, VXLAN, Q-in-Q
 - **Network Impairment Controls** - Visual toggles for loss, delay, duplication
 - **Professional Design** - Cyber-themed dark interface with animations
+- **One-Command Installer** - New `install.sh` for complete automated setup
 
 ### Changed
 - GUI completely redesigned for VEP1445 multi-port testing
 - Simplified traffic flow creation (3-click setup)
 - Improved real-time statistics visualization
 - Enhanced RFC 2544 test interface
+- Updated GitHub Actions to use v4 (checkout@v4, upload-artifact@v4, setup-python@v5)
+- Fixed all installation scripts for proper path detection
 
 ### Fixed
 - Socket.IO connection stability
 - Port conflict detection and resolution
 - Service startup reliability
+- Installation script path issues
+- Virtual environment detection in start.sh
+- Service file auto-creation in install-service.sh
 
 ## [3.1.0] - 2026-01-13
 
