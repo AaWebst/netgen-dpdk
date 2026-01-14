@@ -37,6 +37,27 @@ sudo apt-get install -y dpdk dpdk-dev libjson-c-dev build-essential python3-pip
 
 ### Installation
 
+#### Option 1: Automatic Installation (Recommended)
+
+```bash
+# 1. Clone repository
+git clone https://github.com/yourusername/netgen-pro-vep1445.git
+cd netgen-pro-vep1445
+
+# 2. Run complete installation
+sudo bash install.sh
+```
+
+This will:
+- Install all dependencies (DPDK, build tools, Python)
+- Build the DPDK engine
+- Setup Python virtual environment
+- Configure DPDK interfaces (optional)
+- Install systemd service
+- Complete setup in one command!
+
+#### Option 2: Manual Installation
+
 ```bash
 # 1. Clone repository
 git clone https://github.com/yourusername/netgen-pro-vep1445.git
@@ -45,11 +66,11 @@ cd netgen-pro-vep1445
 # 2. Build DPDK engine
 make
 
-# 3. Configure VEP1445 interfaces
-sudo bash scripts/configure-vep1445-basic.sh
-
-# 4. Setup Python environment
+# 3. Setup Python environment
 sudo bash scripts/quick-setup-venv.sh
+
+# 4. Configure VEP1445 interfaces
+sudo bash scripts/configure-vep1445-basic.sh
 
 # 5. Install systemd service
 sudo bash scripts/install-service.sh
