@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y dpdk dpdk-dev libjson-c-dev build-essential
+    
+    - name: Build DPDK Engine
+      run: |
+        make clean
+        make
+    
+    - name: Check Build Artifacts
+      run: |
+        ls -lh build/
+        test -f build/dpdk_engine
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Python Lint
+      run: |
+        pip install flake8
+        flake8 web/ --count --select=E9,F63,F7,F82 --show-source --statistics
+    
+    - name: Archive Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dpdk-engine
+        path: build/dpdk_engine
+
+  test:
+    runs-on: ubuntu-22.04
+    needs: build
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install Test Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov
+    
+    - name: Run Unit Tests
+      run: |
+        # Add tests when available
+        echo "Unit tests placeholder"
