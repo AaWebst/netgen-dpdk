@@ -12,8 +12,8 @@ BUILD_DIR = build
 WEB_DIR = web
 
 # Targets
-TARGET = $(BUILD_DIR)/dpdk_engine_complete
-SRC = $(SRC_DIR)/dpdk_engine_complete.cpp
+TARGET = $(BUILD_DIR)/dpdk_engine
+SRC = $(SRC_DIR)/dpdk_engine.cpp
 
 # Features
 CFLAGS += -DENABLE_RX_SUPPORT
