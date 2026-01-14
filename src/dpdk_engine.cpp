@@ -383,7 +383,7 @@ void add_vxlan_header(uint8_t *pkt_data, uint32_t vni, uint16_t *offset) {
     *offset += sizeof(vxlan_header);
 }
 
-void build_ipv6_header(uint8_t *pkt_data, ipv6_addr *src, ipv6_addr *dst, 
+void build_ipv6_header(uint8_t *pkt_data, const ipv6_addr *src, const ipv6_addr *dst, 
                        uint16_t payload_len, uint8_t next_header, uint16_t *offset) {
     struct rte_ipv6_hdr *ipv6 = (struct rte_ipv6_hdr*)(pkt_data + *offset);
     
@@ -479,12 +479,20 @@ struct rte_mbuf* build_packet(traffic_profile *prof) {
     // IP header (IPv4 or IPv6)
     if (prof->use_ipv6) {
         static const ipv6_addr default_src_ipv6 = {{0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,1}};
+        uint8_t next_proto;
+        if (prof->protocol == PROTO_UDP) {
+            next_proto = IPPROTO_UDP;
+        } else if (prof->protocol == PROTO_TCP) {
+            next_proto = IPPROTO_TCP;
+        } else {
+            next_proto = IPPROTO_ICMPV6;
+        }
+        
         build_ipv6_header(pkt_data, 
                          &default_src_ipv6,
                          &prof->dst_ipv6,
                          prof->packet_size - offset,
-                         prof->protocol == PROTO_UDP ? IPPROTO_UDP : 
-                         prof->protocol == PROTO_TCP ? IPPROTO_TCP : IPPROTO_ICMPV6,
+                         next_proto,
                          &offset);
     } else {
         uint16_t *ether_type_ptr = (uint16_t*)(pkt_data + offset - 2);

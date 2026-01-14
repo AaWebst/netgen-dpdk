@@ -5,6 +5,17 @@ All notable changes to NetGen Pro VEP1445 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.2] - 2026-01-14
+
+### Fixed
+- **const correctness** in build_ipv6_header function signature
+- Changed `ipv6_addr *src, ipv6_addr *dst` to `const ipv6_addr *src, const ipv6_addr *dst`
+- Fixed enum comparison warning in IPv6 protocol selection (use if/else instead of nested ternary)
+- Resolves: "invalid conversion from 'const ipv6_addr*' to 'ipv6_addr*'"
+
+### Changed
+- Cleaner enum handling in IPv6 next header protocol selection
+
 ## [3.2.1] - 2026-01-14
 
 ### Fixed
