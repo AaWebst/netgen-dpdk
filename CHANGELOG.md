@@ -5,6 +5,27 @@ All notable changes to NetGen Pro VEP1445 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.3] - 2026-01-14
+
+### Added
+- **Smart configuration script** (configure-vep1445-smart.sh)
+- Auto-discovery of network interfaces even when down
+- Manual interface selection fallback
+- Preserves existing netplan configuration
+- Multiple methods to find PCI addresses (ethtool + ip link)
+- Interactive interface selection if eno7/eno8 not found
+
+### Changed
+- install.sh now uses smart configuration script instead of basic
+- Configuration script no longer overwrites existing netplan
+- Better handling of custom network setups (VLANs, bridges)
+- Improved error messages and troubleshooting guidance
+
+### Fixed
+- Interface discovery on systems with custom netplan configs
+- Detection of interfaces that are configured but down
+- Preservation of existing VLAN and network configuration
+
 ## [3.2.2] - 2026-01-14
 
 ### Fixed

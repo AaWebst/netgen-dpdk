@@ -91,10 +91,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 read -p "Configure DPDK interfaces now? (y/n): " -n 1 -r
 echo ""
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    bash "$INSTALL_DIR/scripts/configure-vep1445-basic.sh"
+    bash "$INSTALL_DIR/scripts/configure-vep1445-smart.sh"
 else
     echo "ℹ️  Skipping interface configuration"
-    echo "   Run later: sudo bash scripts/configure-vep1445-basic.sh"
+    echo "   Run later: sudo bash scripts/configure-vep1445-smart.sh"
 fi
 echo ""
 
