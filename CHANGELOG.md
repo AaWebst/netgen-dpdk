@@ -5,6 +5,19 @@ All notable changes to NetGen Pro VEP1445 will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2026-01-14
+
+### Fixed
+- **Compilation errors** in dpdk_engine.cpp (C++ rvalue address errors)
+- Fixed MAC address initialization using static const variables
+- Fixed IPv6 address initialization using static const variable
+- Removed unused variables causing compiler warnings (bufs, delay_cycles, current_rfc2544_test)
+- Makefile now correctly references dpdk_engine.cpp (not dpdk_engine_complete.cpp)
+
+### Changed
+- Binary output renamed to `build/dpdk_engine` for consistency
+- Cleaner compilation with zero warnings
+
 ## [3.2.0] - 2026-01-14
 
 ### Added

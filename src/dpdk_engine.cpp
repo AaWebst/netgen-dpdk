@@ -228,7 +228,7 @@ static int tx_port = 0;
 static int rx_port = 1;
 static bool dual_port_mode = false;
 static rx_stats rx_statistics;
-static rfc2544_test current_rfc2544_test;
+// Note: RFC 2544 tests are run inline, no global state needed
 
 // Impairment support
 static std::mt19937 rng_generator;
@@ -442,8 +442,10 @@ struct rte_mbuf* build_packet(traffic_profile *prof) {
     
     // Ethernet header
     struct rte_ether_hdr *eth = (struct rte_ether_hdr*)pkt_data;
-    rte_ether_addr_copy(&(struct rte_ether_addr){{0x00,0x11,0x22,0x33,0x44,0x55}}, &eth->src_addr);
-    rte_ether_addr_copy(&(struct rte_ether_addr){{0x00,0xAA,0xBB,0xCC,0xDD,0xEE}}, &eth->dst_addr);
+    static const struct rte_ether_addr default_src_mac = {{0x00,0x11,0x22,0x33,0x44,0x55}};
+    static const struct rte_ether_addr default_dst_mac = {{0x00,0xAA,0xBB,0xCC,0xDD,0xEE}};
+    rte_ether_addr_copy(&default_src_mac, &eth->src_addr);
+    rte_ether_addr_copy(&default_dst_mac, &eth->dst_addr);
     
     // Handle Q-in-Q VLAN
     if (prof->qinq_enabled) {
@@ -476,9 +478,9 @@ struct rte_mbuf* build_packet(traffic_profile *prof) {
     
     // IP header (IPv4 or IPv6)
     if (prof->use_ipv6) {
-        uint16_t ip_offset = offset;
+        static const ipv6_addr default_src_ipv6 = {{0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,1}};
         build_ipv6_header(pkt_data, 
-                         &(ipv6_addr){{0x20,0x01,0x0d,0xb8,0,0,0,0,0,0,0,0,0,0,0,1}},
+                         &default_src_ipv6,
                          &prof->dst_ipv6,
                          prof->packet_size - offset,
                          prof->protocol == PROTO_UDP ? IPPROTO_UDP : 
@@ -658,7 +660,6 @@ int rx_thread_main(__rte_unused void *arg) {
 int tx_thread_main(__rte_unused void *arg) {
     printf("TX thread started on lcore %u\n", rte_lcore_id());
     
-    struct rte_mbuf *bufs[BURST_SIZE];
     uint64_t next_send_time[MAX_PROFILES] = {0};
     
     while (running && !force_quit) {
@@ -686,7 +687,6 @@ int tx_thread_main(__rte_unused void *arg) {
             // Apply delay impairment
             uint64_t delay = apply_delay(&prof->impairment);
             if (delay > 0) {
-                uint64_t delay_cycles = delay * rte_get_tsc_hz() / 1000000000;
                 rte_delay_us_block(delay / 1000);
             }
             
