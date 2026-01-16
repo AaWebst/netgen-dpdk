@@ -1,130 +1,260 @@
 # Contributing to NetGen Pro VEP1445
 
-First off, thank you for considering contributing to NetGen Pro! It's people like you that make this tool better for everyone.
+Thank you for your interest in contributing to NetGen Pro! This document provides guidelines and instructions for contributing.
 
-## Code of Conduct
+---
 
-This project and everyone participating in it is governed by our Code of Conduct. By participating, you are expected to uphold this code.
-
-## How Can I Contribute?
+## 🤝 How to Contribute
 
 ### Reporting Bugs
 
-Before creating bug reports, please check the existing issues to avoid duplicates. When you create a bug report, include as many details as possible:
+1. Check if the bug has already been reported in [Issues](https://github.com/YOUR_USERNAME/netgen-pro-vep1445/issues)
+2. If not, create a new issue with:
+   - Clear title and description
+   - Steps to reproduce
+   - Expected vs actual behavior
+   - System information (OS, DPDK version, hardware)
+   - Relevant logs
 
-- **Use a clear and descriptive title**
-- **Describe the exact steps to reproduce the problem**
-- **Provide specific examples** (config files, screenshots, logs)
-- **Describe the behavior you observed and what you expected**
-- **Include environment details** (OS, DPDK version, hardware)
+### Suggesting Features
 
-### Suggesting Enhancements
+1. Check if the feature has been requested in [Issues](https://github.com/YOUR_USERNAME/netgen-pro-vep1445/issues)
+2. Create a new issue with:
+   - Clear description of the feature
+   - Use case / motivation
+   - Possible implementation approach
+   - Any relevant examples
 
-Enhancement suggestions are tracked as GitHub issues. When creating an enhancement suggestion, include:
+### Submitting Pull Requests
 
-- **Use a clear and descriptive title**
-- **Provide a detailed description** of the suggested enhancement
-- **Explain why this enhancement would be useful**
-- **List any alternative solutions** you've considered
+1. **Fork the repository**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/netgen-pro-vep1445.git
+   cd netgen-pro-vep1445
+   ```
 
-### Pull Requests
+2. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 
-1. Fork the repo and create your branch from `main`
-2. If you've added code that should be tested, add tests
-3. If you've changed APIs, update the documentation
-4. Ensure the test suite passes
-5. Make sure your code follows the existing style
-6. Issue that pull request!
+3. **Make your changes**
+   - Follow the code style guide (see below)
+   - Add tests if applicable
+   - Update documentation
 
-## Development Setup
+4. **Commit your changes**
+   ```bash
+   git add .
+   git commit -m "Add feature: your feature description"
+   ```
 
-```bash
-# Clone your fork
-git clone https://github.com/your-username/netgen-pro-vep1445.git
-cd netgen-pro-vep1445
+5. **Push to your fork**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
 
-# Install dependencies
-sudo apt-get install dpdk dpdk-dev libjson-c-dev
+6. **Open a Pull Request**
+   - Provide clear description
+   - Reference any related issues
+   - Include screenshots if UI changes
 
-# Build
-make
+---
 
-# Run tests
-make test
-```
+## 📝 Code Style Guide
 
-## Coding Standards
+### C/C++ Code
 
-### C++ (DPDK Engine)
+- **Indentation:** 4 spaces (no tabs)
+- **Naming:**
+  - Functions: `snake_case` (e.g., `dpdk_get_link_status`)
+  - Variables: `snake_case` (e.g., `port_id`)
+  - Constants: `UPPER_CASE` (e.g., `MAX_PORTS`)
+  - Structs: `snake_case` (e.g., `struct discovered_device`)
+- **Braces:** K&R style
+  ```c
+  if (condition) {
+      // code
+  }
+  ```
+- **Comments:** Descriptive comments for functions and complex logic
+  ```c
+  /*
+   * Get link status for a DPDK port
+   * Returns: 1 = link up, 0 = link down, -1 = error
+   */
+  int dpdk_get_link_status(uint16_t port_id, struct rte_eth_link *link)
+  ```
 
-- Use C++17 features
-- Follow existing naming conventions
-- Comment complex algorithms
-- Keep functions focused and small
-- Use RAII for resource management
+### Python Code
 
-### Python (Control Server)
+- **Follow PEP 8**
+- **Indentation:** 4 spaces
+- **Naming:**
+  - Functions: `snake_case`
+  - Classes: `PascalCase`
+  - Constants: `UPPER_CASE`
+- **Docstrings:** For all functions and classes
+  ```python
+  def send_dpdk_command(command_dict, timeout=10):
+      """Send command to DPDK engine via Unix socket"""
+      # implementation
+  ```
 
-- Follow PEP 8 style guide
-- Use type hints where appropriate
-- Document functions with docstrings
-- Keep functions under 50 lines when possible
+### JavaScript Code
 
-### JavaScript (GUI)
+- **Indentation:** 2 spaces
+- **Naming:**
+  - Variables: `camelCase`
+  - Classes: `PascalCase`
+  - Constants: `UPPER_CASE`
+- **Modern JS:** ES6+ features preferred
+- **Comments:** JSDoc style for functions
 
-- Use ES6+ features
-- Follow existing code style
-- Comment non-obvious code
-- Keep functions pure when possible
+---
 
-## Git Commit Messages
+## 🧪 Testing
 
-- Use the present tense ("Add feature" not "Added feature")
-- Use the imperative mood ("Move cursor to..." not "Moves cursor to...")
-- Limit the first line to 72 characters
-- Reference issues and pull requests after the first line
+### Before Submitting
 
-Example:
-```
-Add IPv6 support to packet builder
+1. **Build the project**
+   ```bash
+   make clean
+   make
+   ```
 
-- Implement IPv6 header construction
-- Add ICMPv6 support
-- Update tests for IPv6 flows
+2. **Test basic functionality**
+   ```bash
+   sudo bash scripts/start-dpdk-engine.sh
+   # Test traffic generation via GUI
+   ```
 
-Fixes #123
-```
+3. **Run diagnostic script**
+   ```bash
+   sudo bash scripts/diagnostics.sh
+   ```
 
-## Project Structure
+### Adding Tests
 
-```
-netgen-pro-vep1445/
-├── src/              # DPDK engine C++ source
-├── web/              # Python control server
-│   ├── templates/    # HTML templates
-│   └── static/       # CSS, JS, images
-├── scripts/          # Installation and setup scripts
-├── config/           # Configuration files
-├── docs/             # Documentation
-└── tests/            # Test files
-```
+- Add unit tests for new C/C++ functions
+- Add API tests for new endpoints
+- Document test procedures in PR
 
-## Testing
+---
 
-- Write unit tests for new features
-- Ensure all tests pass before submitting PR
-- Add integration tests for complex features
-- Test on actual VEP1445 hardware when possible
+## 📚 Documentation
 
-## Documentation
+### Required Documentation
 
-- Update README.md for new features
-- Add docstrings to Python functions
-- Comment C++ code, especially DPDK interactions
-- Update user guides in docs/ folder
+- **Code comments:** For complex logic
+- **API documentation:** For new endpoints
+- **README updates:** For new features
+- **Changelog entries:** Following Keep a Changelog format
 
-## Questions?
+### Documentation Style
 
-Feel free to open an issue with your question or reach out to the maintainers.
+- Clear and concise
+- Include code examples
+- Use proper markdown formatting
+- Add diagrams for complex features
 
-Thank you for contributing! 🎉
+---
+
+## 🔍 Review Process
+
+### What We Look For
+
+- ✅ Code follows style guide
+- ✅ Changes are well-tested
+- ✅ Documentation is updated
+- ✅ Commit messages are clear
+- ✅ No breaking changes (or clearly documented)
+
+### Review Timeline
+
+- Initial review: Within 3-5 days
+- Follow-up reviews: Within 1-2 days
+- Merge: After approval from maintainer
+
+---
+
+## 🚀 Release Process
+
+### Version Numbering
+
+We use [Semantic Versioning](https://semver.org/):
+- **MAJOR:** Breaking changes
+- **MINOR:** New features (backward compatible)
+- **PATCH:** Bug fixes
+
+### Release Checklist
+
+- [ ] Update version in `VERSION` file
+- [ ] Update `CHANGELOG.md`
+- [ ] Update documentation
+- [ ] Tag release: `git tag -a v4.1.0 -m "Release v4.1.0"`
+- [ ] Push tags: `git push origin v4.1.0`
+- [ ] Create GitHub release
+
+---
+
+## 💬 Communication
+
+### Channels
+
+- **Issues:** Bug reports, feature requests
+- **Pull Requests:** Code contributions
+- **Discussions:** General questions, ideas
+
+### Code of Conduct
+
+- Be respectful and inclusive
+- Provide constructive feedback
+- Focus on the code, not the person
+- Help others learn and grow
+
+---
+
+## 🎯 Priority Areas
+
+### High Priority
+
+- Performance improvements
+- Bug fixes
+- Security enhancements
+- Documentation improvements
+
+### Medium Priority
+
+- New traffic patterns
+- GUI enhancements
+- API expansions
+- Testing infrastructure
+
+### Low Priority
+
+- Code refactoring (without functional changes)
+- Minor UI tweaks
+- Convenience features
+
+---
+
+## 📋 Checklist Before Submitting PR
+
+- [ ] Code follows style guide
+- [ ] All tests pass
+- [ ] Documentation updated
+- [ ] Changelog updated
+- [ ] No merge conflicts
+- [ ] Commits are clear and atomic
+- [ ] PR description is complete
+
+---
+
+## 🙏 Thank You!
+
+Your contributions make NetGen Pro better for everyone. We appreciate your time and effort!
+
+---
+
+**Questions?** Open an issue or discussion on GitHub.

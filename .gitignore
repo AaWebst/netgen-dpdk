@@ -1,25 +1,31 @@
+# Build artifacts
+build/
+*.o
+*.so
+*.a
+dpdk_engine
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-venv/
 env/
+venv/
 ENV/
 *.egg-info/
 dist/
-build/
-*.egg
 
-# C/C++
-*.o
-*.a
-*.so
-*.out
-*.exe
-dpdk_engine
-/build/
+# Logs
+*.log
+logs/
+/var/log/
+
+# Data files
+data/
+*.pcap
+*.csv
 
 # IDE
 .vscode/
@@ -29,47 +35,18 @@ dpdk_engine
 *~
 .DS_Store
 
-# Logs
-*.log
-logs/
-
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Configuration (local overrides)
-dpdk-config.json
-local-config.json
-
-# DPDK
-.dpdk_telemetry
-
-# System
+# Temporary
+*.tmp
+*.temp
 /tmp/
-*.sock
-*.pid
+nohup.out
 
-# Documentation builds
-/docs/_build/
-/docs/.doctrees/
-
-# Test files
-test_results/
-*.pcap
-
-# Secrets
-.env
-secrets.json
+# Configuration (may contain sensitive data)
+config/production/
 *.key
 *.pem
+secrets/
 
-# Backup files
-*.backup
-*.bak
-*~
-
-# OS generated
-Thumbs.db
-.Spotlight-V100
-.Trashes
+# DPDK
+.dpdk_*
+hugepages/
