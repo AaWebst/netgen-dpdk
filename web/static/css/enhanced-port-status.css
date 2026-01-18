@@ -1,0 +1,252 @@
+/* Enhanced Port Status with Link Detection and LLDP */
+
+/* Status dots for link indicators */
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.status-dot.green {
+    background: #00ff88;
+    box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+}
+
+.status-dot.red {
+    background: #ff4444;
+    box-shadow: 0 0 8px rgba(255, 68, 68, 0.6);
+}
+
+.status-dot.cyan {
+    background: #00d4ff;
+    box-shadow: 0 0 8px rgba(0, 212, 255, 0.6);
+}
+
+.status-dot.gray {
+    background: #888;
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Link indicator in port cards */
+.link-indicator {
+    font-size: 11px;
+    padding: 4px 8px;
+    margin-top: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+}
+
+.link-indicator.link-up {
+    background: rgba(0, 255, 136, 0.1);
+    color: #00ff88;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+.link-indicator.link-down {
+    background: rgba(255, 68, 68, 0.1);
+    color: #ff4444;
+    border: 1px solid rgba(255, 68, 68, 0.3);
+}
+
+.link-indicator.link-dpdk {
+    background: rgba(0, 212, 255, 0.1);
+    color: #00d4ff;
+    border: 1px solid rgba(0, 212, 255, 0.3);
+}
+
+.link-indicator.link-unknown {
+    background: rgba(136, 136, 136, 0.1);
+    color: #888;
+    border: 1px solid rgba(136, 136, 136, 0.3);
+}
+
+/* LLDP Neighbor Info */
+.lldp-neighbor-info {
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    border-left: 3px solid var(--color-primary);
+}
+
+.neighbor-device {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.neighbor-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.neighbor-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.neighbor-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #00ff88;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.neighbor-port {
+    font-size: 9px;
+    color: #888;
+    font-family: 'Courier New', monospace;
+    margin-top: 2px;
+}
+
+/* Connection indicator in LAN selector boxes */
+.connection-indicator {
+    position: absolute;
+    bottom: 4px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 9px;
+    color: #00ff88;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px;
+    border-radius: 0 0 8px 8px;
+}
+
+/* LAN box states based on link */
+.lan-box.link-up {
+    border-width: 2px;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3);
+}
+
+.lan-box.link-down {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.lan-box.link-down:hover {
+    transform: none;
+    border-color: #ff4444;
+}
+
+/* Refresh LLDP button */
+.refresh-lldp-btn {
+    padding: 8px 16px;
+    background: var(--color-primary);
+    color: var(--bg-dark);
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.refresh-lldp-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 255, 136, 0.3);
+}
+
+.refresh-lldp-btn:active {
+    transform: translateY(0);
+}
+
+/* Port card enhancements */
+.port-card[data-link="up"] {
+    border-left: 3px solid #00ff88;
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.03) 0%, transparent 100%);
+}
+
+.port-card[data-link="down"] {
+    border-left: 3px solid #ff4444;
+    opacity: 0.6;
+}
+
+.port-card[data-link="dpdk_bound"] {
+    border-left: 3px solid #00d4ff;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
+}
+
+/* Animated gradient for active DPDK ports */
+@keyframes dpdk-glow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(0, 212, 255, 0.25);
+    }
+}
+
+.port-card[data-status="DPDK"] {
+    animation: dpdk-glow 3s ease-in-out infinite;
+}
+
+/* Tooltip for connection details */
+.port-card[data-connected]::after {
+    content: attr(data-connected);
+    position: absolute;
+    top: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: #00ff88;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 1000;
+}
+
+.port-card:hover::after {
+    opacity: 1;
+}
+
+/* Traffic Matrix Integration */
+.lan-box[data-connected-device]::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #00ff88;
+    box-shadow: 0 0 6px rgba(0, 255, 136, 0.8);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .lldp-neighbor-info {
+        padding: 6px;
+    }
+    
+    .neighbor-name {
+        font-size: 10px;
+    }
+    
+    .neighbor-port {
+        font-size: 8px;
+    }
+    
+    .connection-indicator {
+        font-size: 8px;
+    }
+}
