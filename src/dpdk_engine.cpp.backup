@@ -884,14 +884,6 @@ int init_port(uint16_t port, struct rte_mempool *mbuf_pool, bool enable_rx) {
     ret = rte_eth_dev_start(port);
     if (ret < 0) return ret;
     
-    
-    // CRITICAL FIX: Start the port!
-    ret = rte_eth_dev_start(port);
-    if (ret < 0) {
-        printf("ERROR: Failed to start port %u: %d\n", port, ret);
-        return ret;
-    }
-    printf("✓ Port %u STARTED\n", port);
     rte_eth_promiscuous_enable(port);
     
     printf("Port %u initialized (%s mode)\n", port, enable_rx ? "RX+TX" : "TX only");
@@ -923,54 +915,6 @@ void handle_control_command(int client_sock, const char *cmd_json) {
     
     // Handle different commands
     if (strcmp(command, "start") == 0) {
-        // Create default traffic profile if none exist
-        if (num_profiles == 0) {
-            RTE_LOG(INFO, USER1, "No profiles configured, creating default profile\n");
-            
-            traffic_profile *prof = &profiles[0];
-            memset(prof, 0, sizeof(traffic_profile));
-            
-            strcpy(prof->name, "default");
-            prof->dst_ip = 0xC0A80202;           // 192.168.2.2
-            prof->use_ipv6 = false;
-            
-            prof->src_port_min = 10000;
-            prof->src_port_max = 10100;
-            prof->dst_port = 5000;
-            
-            prof->protocol = PROTO_UDP;          // UDP
-            prof->packet_size = 1400;
-            prof->rate_mbps = 100.0;
-            prof->burst_size = 32;
-            
-            // Calculate inter-packet gap for ~100 Mbps with 1400 byte packets
-            // Formula: IPG (ns) = (packet_size * 8 * 1000) / rate_mbps
-            prof->inter_packet_gap_ns = (prof->packet_size * 8 * 1000) / prof->rate_mbps;
-            
-            prof->vlan_enabled = false;
-            prof->vlan_id = 0;
-            prof->qinq_enabled = false;
-            prof->dscp = 0;
-            prof->mpls_label_count = 0;
-            prof->vxlan_enabled = false;
-            
-            prof->payload_type = PAYLOAD_INCREMENT;  // Incrementing pattern
-            prof->custom_payload_len = 0;
-            
-            prof->sequence_num = 0;
-            prof->stream_id = 1;
-            prof->packets_sent = 0;
-            prof->bytes_sent = 0;
-            prof->packets_dropped = 0;
-            
-            memset(&prof->impairment, 0, sizeof(impairment_config));
-            
-            num_profiles = 1;
-            
-            RTE_LOG(INFO, USER1, "✓ Created default profile: UDP 192.168.1.1 -> 192.168.2.2:%u, %u bytes @ %.1f Mbps\n",
-                    prof->dst_port, prof->packet_size, prof->rate_mbps);
-        }
-        
         running = true;
         rte_eal_mp_remote_launch(tx_thread_main, NULL, SKIP_MAIN);
         if (dual_port_mode) {

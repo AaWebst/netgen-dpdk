@@ -1,0 +1,18 @@
+{
+  "dpdk": {
+    "tx_port": {
+      "interface": "eno4",
+      "pci": "0000:02:00.1",
+      "port_id": 0
+    },
+    "rx_port": {
+      "interface": "eno5",
+      "pci": "0000:07:00.1",
+      "port_id": 1
+    }
+  },
+  "network": {
+    "management_ip": "192.168.2.51",
+    "web_port": 8080
+  }
+}
