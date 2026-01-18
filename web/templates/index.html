@@ -737,6 +737,8 @@
             opacity: 1;
         }
     </style>
+<link rel="stylesheet" href="/static/css/enhanced-port-status.css">
+<script src="/static/js/enhanced-port-monitor.js"></script>
 </head>
 <body>
     <div class="bg-grid"></div>
@@ -796,6 +798,9 @@
 
                 <div class="sidebar-section">
                     <h3>Port Status</h3>
+					<button id="refresh-lldp-btn" class="refresh-lldp-btn" style="margin-bottom: 12px;">
+					🔄 Refresh LLDP
+					</button>
                     <div class="port-matrix" id="port-matrix">
                         <div class="port-card">
                             <div>
@@ -872,27 +877,27 @@
                         <div class="form-group" style="margin-bottom: 24px;">
                             <div class="form-label">Select Source LAN (TX)</div>
                             <div class="lan-selector" id="source-selector">
-                                <div class="lan-box" onclick="selectSource('lan1')" data-lan="lan1">
+                                <div class="lan-box" onclick="selectSource('lan1')" data-lan="lan1" data-lan-interface="eno2">>
                                     <div class="lan-label">LAN1</div>
                                     <div class="lan-port">eno2</div>
                                     <div class="lan-ip">192.168.1.0/24</div>
                                 </div>
-                                <div class="lan-box" onclick="selectSource('lan2')" data-lan="lan2">
+                                <div class="lan-box" onclick="selectSource('lan2')" data-lan="lan2" data-lan-interface="eno3">>
                                     <div class="lan-label">LAN2</div>
                                     <div class="lan-port">eno3</div>
                                     <div class="lan-ip">192.168.2.0/24</div>
                                 </div>
-                                <div class="lan-box" onclick="selectSource('lan3')" data-lan="lan3">
+                                <div class="lan-box" onclick="selectSource('lan3')" data-lan="lan3" data-lan-interface="eno4">>
                                     <div class="lan-label">LAN3</div>
                                     <div class="lan-port">eno4</div>
                                     <div class="lan-ip">192.168.3.0/24</div>
                                 </div>
-                                <div class="lan-box" onclick="selectSource('lan4')" data-lan="lan4">
+                                <div class="lan-box" onclick="selectSource('lan4')" data-lan="lan4" data-lan-interface="eno5">>
                                     <div class="lan-label">LAN4</div>
                                     <div class="lan-port">eno5</div>
                                     <div class="lan-ip">192.168.4.0/24</div>
                                 </div>
-                                <div class="lan-box" onclick="selectSource('lan5')" data-lan="lan5">
+                                <div class="lan-box" onclick="selectSource('lan5')" data-lan="lan5" data-lan-interface="eno6">>
                                     <div class="lan-label">LAN5</div>
                                     <div class="lan-port">eno6</div>
                                     <div class="lan-ip">192.168.5.0/24</div>
