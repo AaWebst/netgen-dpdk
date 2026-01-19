@@ -1,303 +1,321 @@
-/*
- * NetGen Pro v4.0 - Enhanced Port Status CSS
- * Link status, LLDP neighbors, Connected devices
- */
+/* Enhanced Port Status Styles with Active Scanning UI */
 
-/* Link Status Indicator */
-.link-status {
-    display: inline-block;
+/* Link status indicators */
+.port-link-status {
     padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    margin-top: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.link-status.up {
-    background: rgba(0, 255, 136, 0.1);
-    color: #00ff88;
-    border: 1px solid rgba(0, 255, 136, 0.3);
-}
-
-.link-status.down {
-    background: rgba(255, 68, 68, 0.1);
-    color: #ff4444;
-    border: 1px solid rgba(255, 68, 68, 0.3);
-}
-
-.link-status.bound {
-    background: rgba(0, 191, 255, 0.1);
-    color: #00bfff;
-    border: 1px solid rgba(0, 191, 255, 0.3);
-}
-
-.link-status.unknown {
-    background: rgba(136, 136, 136, 0.1);
-    color: #888;
-    border: 1px solid rgba(136, 136, 136, 0.3);
-}
-
-/* Port Status Badge Updates */
-.port-status {
-    display: inline-block;
-    padding: 6px 12px;
     border-radius: 4px;
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    min-width: 70px;
-    text-align: center;
-}
-
-.port-status.linux {
-    background: #2a4858;
-    color: #5dade2;
-    border: 1px solid #3a6878;
-}
-
-.port-status.dpdk {
-    background: #1a3a2a;
-    color: #00ff88;
-    border: 1px solid #2a5a3a;
-    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
-}
-
-.port-status.avail {
-    background: #3a3a2a;
-    color: #ffd700;
-    border: 1px solid #5a5a3a;
-}
-
-.port-status.unknown {
-    background: #2a2a2a;
-    color: #888;
-    border: 1px solid #3a3a3a;
-}
-
-/* LLDP / Connected Device Info */
-.lldp-info {
-    margin-top: 12px;
-    padding: 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.connected-device {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-}
-
-.device-icon {
-    font-size: 24px;
-    line-height: 1;
-    flex-shrink: 0;
-}
-
-.device-details {
-    flex: 1;
-    min-width: 0;
-}
-
-.device-name {
-    font-size: 13px;
-    font-weight: 600;
-    color: #00ff88;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.device-type {
     font-size: 11px;
+    margin-top: 4px;
+    font-weight: 500;
+}
+
+.port-link-status.up {
+    background: rgba(0, 255, 0, 0.1);
+    color: #00ff00;
+    border: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.port-link-status.down {
+    background: rgba(255, 0, 0, 0.1);
+    color: #ff4444;
+    border: 1px solid rgba(255, 0, 0, 0.3);
+}
+
+.port-link-status.unknown {
+    background: rgba(255, 165, 0, 0.1);
+    color: #ffa500;
+    border: 1px solid rgba(255, 165, 0, 0.3);
+}
+
+/* Neighbor info */
+.port-neighbor {
+    font-size: 10px;
+    color: #00ff88;
+    margin-top: 4px;
+    display: none;
+}
+
+/* Status note */
+.port-status-note {
+    font-size: 9px;
     color: #888;
-    margin-bottom: 6px;
-}
-
-.device-ip,
-.device-port {
-    font-size: 10px;
-    color: #aaa;
-    font-family: 'Courier New', monospace;
-    margin-bottom: 2px;
-}
-
-.device-more {
-    font-size: 10px;
-    color: #666;
+    margin-top: 2px;
     font-style: italic;
+    display: none;
+}
+
+/* Discovery method badge */
+.discovery-method {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 8px;
+    font-weight: bold;
     margin-top: 4px;
 }
 
-/* LLDP Device (from LLDP discovery) */
-.lldp-device .device-icon {
-    color: #00bfff;
+.discovery-method.lldp {
+    background: #4CAF50;
+    color: white;
 }
 
-.lldp-device .device-name {
-    color: #00bfff;
+.discovery-method.arp {
+    background: #2196F3;
+    color: white;
 }
 
-/* ARP Device (from ARP table) */
-.arp-device .device-icon {
-    color: #ffd700;
+.discovery-method.traffic_stats {
+    background: #FF9800;
+    color: white;
 }
 
-.arp-device .device-name {
-    color: #ffd700;
+.discovery-method.none {
+    background: #666;
+    color: white;
 }
 
-/* Port Card Enhanced */
-.port-card {
-    position: relative;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border: 1px solid rgba(0, 255, 136, 0.1);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 12px;
+/* LAN box states */
+.lan-box {
     transition: all 0.3s ease;
+}
+
+.lan-box.link-up {
+    border-color: #00ff00;
+    box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+}
+
+.lan-box.link-down {
+    opacity: 0.5;
+    border-color: #ff4444;
+}
+
+.lan-box.link-unknown {
+    opacity: 0.7;
+    border-color: #ffa500;
+}
+
+/* Connected device label */
+.lan-connected {
+    font-size: 9px;
+    color: #00ff88;
+    margin-top: 2px;
+}
+
+/* Control buttons */
+.port-controls {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+}
+
+.refresh-ports-btn,
+.force-scan-btn,
+.btn-pause,
+.btn-resume,
+.btn-scan-on,
+.btn-scan-off {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 4px;
     cursor: pointer;
+    font-size: 11px;
+    margin-right: 5px;
+    margin-bottom: 5px;
+    transition: all 0.2s ease;
 }
 
-.port-card:hover {
-    border-color: rgba(0, 255, 136, 0.3);
-    box-shadow: 0 4px 20px rgba(0, 255, 136, 0.1);
-    transform: translateY(-2px);
+.refresh-ports-btn {
+    background: #00ff88;
+    color: #000;
 }
 
-.port-card[data-status="dpdk"] {
-    border-color: rgba(0, 255, 136, 0.3);
-    box-shadow: 0 0 15px rgba(0, 255, 136, 0.15);
+.refresh-ports-btn:hover {
+    background: #00dd77;
 }
 
-.port-card[data-link="up"] {
-    border-left: 3px solid #00ff88;
+.force-scan-btn {
+    background: #2196F3;
+    color: white;
 }
 
-.port-card[data-link="down"] {
-    border-left: 3px solid #ff4444;
+.force-scan-btn:hover {
+    background: #1976D2;
 }
 
-/* Port Header */
-.port-header {
+.btn-pause {
+    background: #FF9800;
+    color: white;
+}
+
+.btn-pause:hover {
+    background: #F57C00;
+}
+
+.btn-resume {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-resume:hover {
+    background: #388E3C;
+}
+
+.btn-scan-on {
+    background: #00ff88;
+    color: #000;
+    font-weight: bold;
+}
+
+.btn-scan-on:hover {
+    background: #00dd77;
+}
+
+.btn-scan-off {
+    background: #666;
+    color: white;
+}
+
+.btn-scan-off:hover {
+    background: #555;
+}
+
+/* Status indicators */
+.status-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    padding: 8px 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-size: 10px;
 }
 
-.port-name {
-    font-size: 18px;
-    font-weight: 700;
-    color: #fff;
-    font-family: 'Roboto Mono', monospace;
+.dpdk-status,
+.monitor-status,
+.scan-status {
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 500;
 }
 
-.port-label {
-    font-size: 12px;
+.dpdk-status.running {
+    background: rgba(0, 255, 0, 0.2);
+    color: #00ff00;
+}
+
+.dpdk-status.stopped {
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff4444;
+}
+
+.monitor-status.active {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.monitor-status.stopped {
+    background: rgba(128, 128, 128, 0.2);
     color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
 }
 
-/* Topology Button */
-.topology-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #00bfff 0%, #0080ff 100%);
-    color: #fff;
-    border: none;
-    border-radius: 24px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(0, 191, 255, 0.3);
-    transition: all 0.3s ease;
-    z-index: 1000;
+.scan-status.active {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196F3;
+    animation: pulse 2s infinite;
 }
 
-.topology-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 191, 255, 0.4);
+.scan-status.passive {
+    background: rgba(128, 128, 128, 0.2);
+    color: #888;
 }
 
-.topology-button:active {
-    transform: translateY(0);
-}
-
-/* Loading Animation */
 @keyframes pulse {
     0%, 100% {
         opacity: 1;
     }
     50% {
-        opacity: 0.5;
+        opacity: 0.6;
     }
 }
 
-.port-card.loading {
-    animation: pulse 2s ease-in-out infinite;
+/* Notification */
+.notification {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    display: none;
 }
 
-/* Responsive Design */
+.notification.success {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4CAF50;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+}
+
+.notification.error {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+    border: 1px solid rgba(244, 67, 54, 0.4);
+}
+
+.notification.info {
+    background: rgba(33, 150, 243, 0.2);
+    color: #2196F3;
+    border: 1px solid rgba(33, 150, 243, 0.4);
+}
+
+/* Last update timestamp */
+.last-update {
+    font-size: 9px;
+    color: #888;
+    text-align: right;
+}
+
+/* Port card enhancements */
+.port-card {
+    transition: all 0.3s ease;
+}
+
+.port-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-    .port-card {
-        padding: 12px;
+    .port-controls {
+        flex-direction: column;
     }
     
-    .port-name {
-        font-size: 16px;
+    .refresh-ports-btn,
+    .force-scan-btn,
+    .btn-pause,
+    .btn-resume,
+    .btn-scan-on,
+    .btn-scan-off {
+        width: 100%;
+        margin-right: 0;
     }
     
-    .lldp-info {
-        padding: 8px;
-    }
-    
-    .device-icon {
-        font-size: 20px;
-    }
-    
-    .device-name {
-        font-size: 12px;
-    }
-    
-    .topology-button {
-        bottom: 10px;
-        right: 10px;
-        padding: 10px 20px;
-        font-size: 12px;
+    .status-bar {
+        flex-direction: column;
+        gap: 5px;
     }
 }
 
-/* Dark Mode Support */
-@media (prefers-color-scheme: light) {
-    .port-card {
-        background: linear-gradient(135deg, #f0f0f0 0%, #e0e0e0 100%);
-        border-color: rgba(0, 0, 0, 0.1);
+/* Loading indicator */
+.loading {
+    animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
     }
-    
-    .port-card:hover {
-        border-color: rgba(0, 191, 255, 0.5);
-        box-shadow: 0 4px 20px rgba(0, 191, 255, 0.2);
-    }
-    
-    .port-name {
-        color: #333;
-    }
-    
-    .port-label {
-        color: #666;
-    }
-    
-    .lldp-info {
-        background: rgba(255, 255, 255, 0.5);
-        border-color: rgba(0, 0, 0, 0.1);
+    to {
+        transform: rotate(360deg);
     }
 }
