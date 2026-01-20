@@ -5,9 +5,9 @@ class EnhancedPortMonitor {
     constructor() {
         this.interval = null;
         this.updateFrequency = 5000; // 5 seconds
-        this.activeScanning = true; // ENABLED BY DEFAULT
+        this.activeScanning = false;
         this.scanInterval = null;
-        this.scanFrequency = 15000; // 15 seconds for active scans (faster)
+        this.scanFrequency = 30000; // 30 seconds for active scans
         this.lastUpdate = null;
         this.autoRefresh = true;
     }

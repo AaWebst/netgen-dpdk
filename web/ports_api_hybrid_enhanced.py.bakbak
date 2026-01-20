@@ -1,0 +1,283 @@
+#!/usr/bin/env python3
+"""
+Enhanced Ports API with Aggressive Active ARP Discovery
+Specifically designed for DPDK-bound interfaces
+Uses arping for active probing
+"""
+
+from flask import Blueprint, jsonify, request
+import subprocess
+import json
+import re
+import socket
+import struct
+
+ports_bp = Blueprint('ports', __name__)
+
+# DPDK port mapping
+DPDK_PORTS = {
+    'eno2': {'label': 'LAN1', 'dpdk_bound': True, 'subnet': '192.168.1.0/24'},
+    'eno3': {'label': 'LAN2', 'dpdk_bound': True, 'subnet': '192.168.2.0/24'},
+    'eno4': {'label': 'LAN3', 'dpdk_bound': True, 'subnet': '192.168.3.0/24'},
+    'eno5': {'label': 'LAN4', 'dpdk_bound': True, 'subnet': '192.168.4.0/24'},
+    'eno6': {'label': 'LAN5', 'dpdk_bound': True, 'subnet': '192.168.5.0/24'},
+    'eno7': {'label': '10G-1', 'dpdk_bound': True, 'subnet': '192.168.6.0/24'},
+    'eno8': {'label': '10G-2', 'dpdk_bound': True, 'subnet': '192.168.7.0/24'},
+    'eno1': {'label': 'MGMT', 'dpdk_bound': False, 'subnet': None}
+}
+
+def run_command(cmd):
+    """Execute shell command and return output"""
+    try:
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=5)
+        return result.stdout.strip()
+    except:
+        return ""
+
+def get_link_status(interface):
+    """Get link status via ethtool"""
+    output = run_command(f"ethtool {interface} 2>/dev/null | grep 'Link detected'")
+    if 'yes' in output:
+        # Get speed
+        speed_output = run_command(f"ethtool {interface} 2>/dev/null | grep Speed")
+        speed_match = re.search(r'(\d+)', speed_output)
+        speed = speed_match.group(1) if speed_match else 'unknown'
+        return 'up', speed
+    return 'down', '0'
+
+def get_arp_table():
+    """Get system ARP table"""
+    neighbors = {}
+    output = run_command("ip neigh show")
+    
+    for line in output.split('\n'):
+        # Format: 192.168.1.1 dev eno2 lladdr aa:bb:cc:dd:ee:ff REACHABLE
+        parts = line.split()
+        if len(parts) >= 5 and 'lladdr' in parts:
+            ip = parts[0]
+            iface_idx = parts.index('dev') + 1 if 'dev' in parts else -1
+            mac_idx = parts.index('lladdr') + 1 if 'lladdr' in parts else -1
+            
+            if iface_idx > 0 and mac_idx > 0 and iface_idx < len(parts) and mac_idx < len(parts):
+                interface = parts[iface_idx]
+                mac = parts[mac_idx]
+                state = parts[-1] if len(parts) > mac_idx + 1 else 'UNKNOWN'
+                
+                if interface not in neighbors:
+                    neighbors[interface] = []
+                
+                neighbors[interface].append({
+                    'ip': ip,
+                    'mac': mac,
+                    'state': state
+                })
+    
+    return neighbors
+
+def active_arping(interface, subnet):
+    """
+    Actively probe network using arping
+    For Juniper switches and other devices
+    """
+    discovered = []
+    
+    # Extract network and calculate broadcast
+    # e.g., 192.168.1.0/24 -> probe .1, .254
+    try:
+        import ipaddress
+        network = ipaddress.IPv4Network(subnet, strict=False)
+        
+        # Probe common addresses: .1, .2, .254
+        probe_ips = [
+            str(network.network_address + 1),   # .1 (usually gateway/switch)
+            str(network.network_address + 2),   # .2
+            str(network.network_address + 254), # .254 (common)
+        ]
+        
+        for ip in probe_ips:
+            # Use arping with short timeout
+            # -c 2 = 2 packets, -w 1 = 1 second timeout, -I = interface
+            cmd = f"arping -c 2 -w 1 -I {interface} {ip} 2>/dev/null"
+            output = run_command(cmd)
+            
+            # Parse arping output for MAC address
+            # Format: "Unicast reply from 192.168.1.1 [AA:BB:CC:DD:EE:FF]"
+            mac_match = re.search(r'\[([0-9a-fA-F:]{17})\]', output)
+            if mac_match:
+                mac = mac_match.group(1).lower()
+                discovered.append({
+                    'ip': ip,
+                    'mac': mac,
+                    'method': 'arping',
+                    'state': 'ACTIVE'
+                })
+                
+                # Also try to get hostname
+                try:
+                    hostname = socket.gethostbyaddr(ip)[0]
+                except:
+                    hostname = None
+                
+                if hostname:
+                    discovered[-1]['hostname'] = hostname
+    
+    except Exception as e:
+        print(f"Active arping error on {interface}: {e}")
+    
+    return discovered
+
+def get_lldp_neighbors(interface):
+    """Get LLDP neighbors (for MGMT port)"""
+    try:
+        output = run_command(f"lldpctl -f json {interface} 2>/dev/null")
+        if output:
+            data = json.loads(output)
+            lldp_info = data.get('lldp', {}).get('interface', {}).get(interface, {})
+            chassis = lldp_info.get('chassis', {})
+            port = lldp_info.get('port', {})
+            
+            return {
+                'system_name': chassis.get('name', {}).get('value'),
+                'port_id': port.get('id', {}).get('value'),
+                'port_descr': port.get('descr', {}).get('value'),
+                'mac': chassis.get('mac', {}).get('value')
+            }
+    except:
+        pass
+    return None
+
+@ports_bp.route('/api/ports/status', methods=['GET'])
+def get_ports_status():
+    """Get status of all ports with aggressive ARP discovery"""
+    
+    # Get ARP table first
+    arp_neighbors = get_arp_table()
+    
+    ports_status = []
+    
+    for interface, info in DPDK_PORTS.items():
+        port_info = {
+            'interface': interface,
+            'label': info['label'],
+            'dpdk_bound': info['dpdk_bound'],
+            'link': 'unknown',
+            'speed': '0',
+            'neighbor': None,
+            'discovery_method': 'none',
+            'status_note': None
+        }
+        
+        # Get link status
+        link, speed = get_link_status(interface)
+        port_info['link'] = link
+        port_info['speed'] = speed
+        
+        if info['dpdk_bound']:
+            # DPDK port - use ARP discovery
+            
+            # First check ARP table
+            if interface in arp_neighbors and len(arp_neighbors[interface]) > 0:
+                neighbor = arp_neighbors[interface][0]  # Take first
+                port_info['neighbor'] = {
+                    'ip': neighbor['ip'],
+                    'mac': neighbor['mac'],
+                    'system_name': f"Device at {neighbor['ip']}"
+                }
+                port_info['discovery_method'] = 'arp'
+            
+            # If no ARP entry and link is up, do active probing
+            elif link == 'up' and info['subnet']:
+                active_neighbors = active_arping(interface, info['subnet'])
+                if active_neighbors:
+                    neighbor = active_neighbors[0]
+                    port_info['neighbor'] = {
+                        'ip': neighbor['ip'],
+                        'mac': neighbor['mac'],
+                        'system_name': neighbor.get('hostname', f"Device at {neighbor['ip']}")
+                    }
+                    port_info['discovery_method'] = 'arping_active'
+                else:
+                    port_info['status_note'] = 'No devices responding to ARP'
+            elif link == 'up':
+                port_info['status_note'] = 'Link up, waiting for traffic'
+            else:
+                port_info['status_note'] = 'Link down or no cable'
+        
+        else:
+            # Management port - use LLDP
+            lldp_neighbor = get_lldp_neighbors(interface)
+            if lldp_neighbor and lldp_neighbor.get('system_name'):
+                port_info['neighbor'] = lldp_neighbor
+                port_info['discovery_method'] = 'lldp'
+        
+        ports_status.append(port_info)
+    
+    # Check if DPDK engine is running
+    dpdk_running = run_command("pgrep -f dpdk_engine") != ""
+    
+    return jsonify({
+        'status': 'success',
+        'ports': ports_status,
+        'dpdk_engine_running': dpdk_running
+    })
+
+@ports_bp.route('/api/ports/arp-scan/<interface>', methods=['POST', 'GET'])
+def force_arp_scan(interface):
+    """Force active ARP scan on specific interface"""
+    
+    if interface not in DPDK_PORTS:
+        return jsonify({'status': 'error', 'message': 'Invalid interface'}), 400
+    
+    info = DPDK_PORTS[interface]
+    
+    if not info['subnet']:
+        return jsonify({'status': 'error', 'message': 'No subnet configured'}), 400
+    
+    # Do active scan
+    neighbors = active_arping(interface, info['subnet'])
+    
+    if neighbors:
+        return jsonify({
+            'status': 'success',
+            'interface': interface,
+            'neighbors': neighbors,
+            'count': len(neighbors)
+        })
+    else:
+        return jsonify({
+            'status': 'success',
+            'interface': interface,
+            'neighbors': [],
+            'count': 0,
+            'message': 'No devices responded'
+        })
+
+@ports_bp.route('/api/ports/refresh', methods=['POST'])
+def refresh_discovery():
+    """Refresh LLDP and flush ARP cache"""
+    
+    # Restart LLDP
+    run_command("systemctl restart lldpd")
+    
+    # Flush ARP cache
+    run_command("ip neigh flush all")
+    
+    return jsonify({'status': 'success', 'message': 'Discovery refreshed'})
+
+@ports_bp.route('/api/ports/dpdk-status', methods=['GET'])
+def dpdk_status():
+    """Check if DPDK engine is running"""
+    
+    dpdk_running = run_command("pgrep -f dpdk_engine") != ""
+    socket_exists = run_command("ls /tmp/dpdk_engine_control.sock 2>/dev/null") != ""
+    
+    return jsonify({
+        'status': 'success',
+        'dpdk_running': dpdk_running,
+        'socket_exists': socket_exists
+    })
+
+def init_app(app):
+    """Initialize the ports blueprint"""
+    app.register_blueprint(ports_bp)
+    print("✓ Ports API with aggressive ARP discovery initialized")
