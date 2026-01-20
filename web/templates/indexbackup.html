@@ -796,120 +796,69 @@
                         <span>Test History</span>
                     </div>
                 </div>
+
                 <div class="sidebar-section">
-                    <h3>PORT STATUS</h3>
-                    
-                    <!-- Control Buttons -->
-                    <div class="port-controls" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                        <button id="refresh-ports-btn" class="refresh-ports-btn" style="flex: 1; padding: 8px; background: var(--accent-primary); color: var(--bg-dark); border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;">🔄 Refresh</button>
-                        <button id="force-scan-btn" class="force-scan-btn" style="flex: 1; padding: 8px; background: var(--accent-secondary); color: var(--bg-dark); border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;">📡 Scan</button>
-                        <button id="toggle-active-scan" class="btn-scan-on" style="width: 100%; padding: 8px; background: var(--accent-primary); color: var(--bg-dark); border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;">📡 Active Scan: ON</button>
-                    </div>
-                    
-                    <!-- Status Indicators Bar -->
-                    <div class="status-bar" style="display: flex; justify-content: space-between; padding: 6px 10px; background: var(--bg-input); border-radius: 6px; margin-bottom: 12px; font-size: 9px;">
-                        <div id="dpdk-status-indicator" class="dpdk-status" style="color: var(--text-dim);">○ DPDK</div>
-                        <div id="monitor-status-indicator" class="monitor-status" style="color: var(--text-dim);">○ Monitor</div>
-                        <div id="scan-status-indicator" class="scan-status" style="color: var(--text-dim);">Passive</div>
-                    </div>
-                    
-                    <!-- Notification -->
-                    <div id="port-notification" class="notification" style="display:none; padding: 8px; margin-bottom: 8px; border-radius: 6px; font-size: 10px;"></div>
-                    
-                    <!-- Port Cards -->
+                    <h3>Port Status</h3>
+					<button id="refresh-lldp-btn" class="refresh-lldp-btn" style="margin-bottom: 12px;">
+					🔄 Refresh LLDP
+					</button>
                     <div class="port-matrix" id="port-matrix">
-                        <div class="port-card" data-port="eno1">
+                        <div class="port-card">
                             <div>
                                 <div class="port-name">eno1</div>
                                 <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">MGMT</div>
-                                <div class="port-link-status" style="font-size: 9px; margin-top: 2px;">Checking...</div>
-                                <div class="port-neighbor" style="font-size: 9px; color: var(--accent-primary); margin-top: 2px; display: none;"></div>
-                                <div class="port-status-note" style="font-size: 8px; color: var(--text-dim); margin-top: 2px; font-style: italic; display: none;"></div>
                             </div>
                             <div class="port-status">LINUX</div>
                         </div>
-                        
-                        <div class="port-card" data-port="eno2">
+                        <div class="port-card">
                             <div>
                                 <div class="port-name">eno2</div>
                                 <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">LAN1</div>
-                                <div class="port-link-status" style="font-size: 9px; margin-top: 2px;">Checking...</div>
-                                <div class="port-neighbor" style="font-size: 9px; color: var(--accent-primary); margin-top: 2px; display: none;"></div>
-                                <div class="port-status-note" style="font-size: 8px; color: var(--text-dim); margin-top: 2px; font-style: italic; display: none;"></div>
                             </div>
                             <div class="port-status">AVAIL</div>
                         </div>
-                        
-                        <div class="port-card" data-port="eno3">
+                        <div class="port-card">
                             <div>
                                 <div class="port-name">eno3</div>
                                 <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">LAN2</div>
-                                <div class="port-link-status" style="font-size: 9px; margin-top: 2px;">Checking...</div>
-                                <div class="port-neighbor" style="font-size: 9px; color: var(--accent-primary); margin-top: 2px; display: none;"></div>
-                                <div class="port-status-note" style="font-size: 8px; color: var(--text-dim); margin-top: 2px; font-style: italic; display: none;"></div>
                             </div>
                             <div class="port-status">AVAIL</div>
                         </div>
-                        
-                        <div class="port-card" data-port="eno4">
+                        <div class="port-card">
                             <div>
                                 <div class="port-name">eno4</div>
                                 <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">LAN3</div>
-                                <div class="port-link-status" style="font-size: 9px; margin-top: 2px;">Checking...</div>
-                                <div class="port-neighbor" style="font-size: 9px; color: var(--accent-primary); margin-top: 2px; display: none;"></div>
-                                <div class="port-status-note" style="font-size: 8px; color: var(--text-dim); margin-top: 2px; font-style: italic; display: none;"></div>
                             </div>
                             <div class="port-status">AVAIL</div>
                         </div>
-                        
-                        <div class="port-card" data-port="eno5">
+                        <div class="port-card">
                             <div>
                                 <div class="port-name">eno5</div>
                                 <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">LAN4</div>
-                                <div class="port-link-status" style="font-size: 9px; margin-top: 2px;">Checking...</div>
-                                <div class="port-neighbor" style="font-size: 9px; color: var(--accent-primary); margin-top: 2px; display: none;"></div>
-                                <div class="port-status-note" style="font-size: 8px; color: var(--text-dim); margin-top: 2px; font-style: italic; display: none;"></div>
                             </div>
                             <div class="port-status">AVAIL</div>
                         </div>
-                        
-                        <div class="port-card" data-port="eno6">
+                        <div class="port-card">
                             <div>
                                 <div class="port-name">eno6</div>
                                 <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">LAN5</div>
-                                <div class="port-link-status" style="font-size: 9px; margin-top: 2px;">Checking...</div>
-                                <div class="port-neighbor" style="font-size: 9px; color: var(--accent-primary); margin-top: 2px; display: none;"></div>
-                                <div class="port-status-note" style="font-size: 8px; color: var(--text-dim); margin-top: 2px; font-style: italic; display: none;"></div>
                             </div>
                             <div class="port-status">AVAIL</div>
                         </div>
-                        
-                        <div class="port-card bound" data-port="eno7">
+                        <div class="port-card bound">
                             <div>
                                 <div class="port-name">eno7</div>
-                                <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">10G-1</div>
-                                <div class="port-link-status" style="font-size: 9px; margin-top: 2px;">Checking...</div>
-                                <div class="port-neighbor" style="font-size: 9px; color: var(--accent-primary); margin-top: 2px; display: none;"></div>
-                                <div class="port-status-note" style="font-size: 8px; color: var(--text-dim); margin-top: 2px; font-style: italic; display: none;"></div>
+                                <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">10G TX</div>
                             </div>
                             <div class="port-status dpdk">DPDK</div>
                         </div>
-                        
-                        <div class="port-card bound" data-port="eno8">
+                        <div class="port-card bound">
                             <div>
                                 <div class="port-name">eno8</div>
-                                <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">10G-2</div>
-                                <div class="port-link-status" style="font-size: 9px; margin-top: 2px;">Checking...</div>
-                                <div class="port-neighbor" style="font-size: 9px; color: var(--accent-primary); margin-top: 2px; display: none;"></div>
-                                <div class="port-status-note" style="font-size: 8px; color: var(--text-dim); margin-top: 2px; font-style: italic; display: none;"></div>
+                                <div class="port-ip" style="font-size: 10px; color: var(--text-dim); margin-top: 4px;">10G RX</div>
                             </div>
                             <div class="port-status dpdk">DPDK</div>
                         </div>
-                    </div>
-                    
-                    <!-- Last Update Timestamp -->
-                    <div class="last-update" style="font-size: 9px; color: var(--text-dim); margin-top: 12px; text-align: center;">
-                        Last update: <span id="last-update-time">--:--:--</span>
                     </div>
                 </div>
             </div>
